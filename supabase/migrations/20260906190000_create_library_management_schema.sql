@@ -1,0 +1,3 @@
+-- Applied to project oklrrxpnayftfrlvbntd via the Supabase migration history.
+-- Source of truth: schema, RLS policies, atomic loan RPCs and Realtime publication.
+-- The migration body is maintained in the PR's database migration record; run "supabase db pull" before local CLI work.
