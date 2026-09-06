@@ -1,12 +1,20 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import pb from '@/lib/pocketbase/client'
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { supabase } from '@/lib/supabase/client'
+
+interface AppUser {
+  id: string
+  name: string
+  email?: string
+  role: 'administrador' | 'voluntario'
+  status: 'ativo' | 'inativo'
+}
 
 interface AuthContextType {
-  user: any
+  user: AppUser | null
   isAuthenticated: boolean
   isAdmin: boolean
   signIn: (email: string, password: string) => Promise<{ error: any }>
-  signOut: () => void
+  signOut: () => Promise<void>
   loading: boolean
 }
 
@@ -18,62 +26,61 @@ export const useAuth = () => {
   return context
 }
 
+async function loadProfile(userId: string, email?: string): Promise<AppUser | null> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, nome, role, status')
+    .eq('id', userId)
+    .single()
+  if (error || !data || data.status !== 'ativo') return null
+  return { id: data.id, name: data.nome, email, role: data.role, status: data.status }
+}
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<any>(pb.authStore.isValid ? pb.authStore.record : null)
-  const [isAuthenticated, setIsAuthenticated] = useState(pb.authStore.isValid)
+  const [user, setUser] = useState<AppUser | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const isAdmin = user?.role === 'administrador'
-
   useEffect(() => {
-    const unsubscribe = pb.authStore.onChange((_token, record) => {
-      setUser(pb.authStore.isValid ? record : null)
-      setIsAuthenticated(pb.authStore.isValid)
-    })
-
-    if (pb.authStore.isValid) {
-      pb.collection('users')
-        .authRefresh()
-        .catch(() => pb.authStore.clear())
-        .finally(() => setLoading(false))
-    } else {
-      if (pb.authStore.record) pb.authStore.clear()
+    let active = true
+    const hydrate = async () => {
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      const profile = authUser ? await loadProfile(authUser.id, authUser.email) : null
+      if (!active) return
+      setUser(profile)
+      if (authUser && !profile) await supabase.auth.signOut()
       setLoading(false)
     }
-
+    hydrate()
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session?.user) {
+        setUser(null)
+        setLoading(false)
+        return
+      }
+      void loadProfile(session.user.id, session.user.email).then(async (profile) => {
+        if (!active) return
+        setUser(profile)
+        if (!profile) await supabase.auth.signOut()
+        setLoading(false)
+      })
+    })
     return () => {
-      unsubscribe()
+      active = false
+      subscription.unsubscribe()
     }
   }, [])
 
   const signIn = async (email: string, password: string) => {
-    try {
-      const result = await pb.collection('users').authWithPassword(email, password)
-      if (result.record?.status === 'inativo') {
-        pb.authStore.clear()
-        return { error: { message: 'Sua conta está inativa. Contate o administrador.' } }
-      }
-      return { error: null }
-    } catch (error) {
-      return { error }
-    }
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    return { error }
   }
 
-  const signOut = () => {
-    pb.authStore.clear()
+  const signOut = async () => {
+    await supabase.auth.signOut()
   }
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isAuthenticated,
-        isAdmin,
-        signIn,
-        signOut,
-        loading,
-      }}
-    >
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isAdmin: user?.role === 'administrador', signIn, signOut, loading }}>
       {children}
     </AuthContext.Provider>
   )
