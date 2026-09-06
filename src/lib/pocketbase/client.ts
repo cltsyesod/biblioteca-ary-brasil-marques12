@@ -186,6 +186,7 @@ const pb = {
       '/backend/v1/emprestimos/devolver': { fn: 'devolver_emprestimo', args: {} },
       '/backend/v1/emprestimos/renovar': { fn: 'renovar_emprestimo', args: {} },
       '/backend/v1/emprestimos/excluir': { fn: 'excluir_emprestimo', args: {} },
+      '/backend/v1/emprestimos/editar': { fn: 'editar_emprestimo', args: {} },
     }
     const match = path.match(/^\/backend\/v1\/emprestimos\/([^/]+)\/(devolver|renovar|excluir)$/)
     if (!match) throw new Error('Endpoint não suportado')
@@ -194,6 +195,8 @@ const pb = {
         ? { p_id: match[1], p_voluntario_id: body.voluntario_id }
         : match[2] === 'renovar'
           ? { p_id: match[1], p_nova_data: body.nova_data_devolucao, p_voluntario_id: body.voluntario_id }
+          : match[2] === 'editar'
+          ? { p_id: match[1], p_leitor_id: body.leitor, p_livro_id: body.livro, p_tipo: body.tipo_emprestimo, p_voluntario_id: body.voluntario_id }
           : { p_id: match[1], p_voluntario_id: body.voluntario_id ?? null }
     const { data, error } = await supabase.rpc(rpc['/backend/v1/emprestimos/' + match[2]].fn, args)
     if (error) throw error
