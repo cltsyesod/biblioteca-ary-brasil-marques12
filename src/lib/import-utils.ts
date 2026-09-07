@@ -79,20 +79,22 @@ export function autoMapColumns(headers: string[], importType: string): Record<st
   if (!config) return {}
   const mapping: Record<string, string> = {}
   for (const header of headers) {
-    const normalized = header.toLowerCase().trim()
-    for (const field of config.fields) {
+    const normalized = header.toLowerCase().replace(/^\uFEFF/, '').trim()
+    const exactMatch = config.fields.find((field) => {
       const fieldLabel = field.label.toLowerCase().replace(/\s+/g, '_')
       const fieldName = field.name.toLowerCase()
-      if (
-        normalized === fieldName ||
-        normalized === fieldLabel ||
-        normalized.includes(fieldName) ||
-        normalized.includes(fieldLabel)
-      ) {
-        mapping[header] = field.name
-        break
-      }
+      return normalized === fieldName || normalized === fieldLabel
+    })
+    if (exactMatch) {
+      mapping[header] = exactMatch.name
+      continue
     }
+    const partialMatch = config.fields.find((field) => {
+      const fieldLabel = field.label.toLowerCase().replace(/\s+/g, '_')
+      const fieldName = field.name.toLowerCase()
+      return normalized.includes(fieldName) || normalized.includes(fieldLabel)
+    })
+    if (partialMatch) mapping[header] = partialMatch.name
   }
   return mapping
 }
