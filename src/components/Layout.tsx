@@ -9,8 +9,6 @@ import {
   Users,
   BookOpen,
   ArrowLeftRight,
-  CornerDownLeft,
-  RefreshCw,
   BarChart3,
   GraduationCap,
   Settings,
@@ -29,18 +27,16 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/usuarios', label: 'Usuários', icon: Users },
+  { to: '/emprestimos', label: 'Atendimento', icon: ArrowLeftRight },
+  { to: '/usuarios', label: 'Leitores', icon: Users },
   { to: '/acervo', label: 'Acervo', icon: BookOpen },
-  { to: '/emprestimos', label: 'Empréstimos', icon: ArrowLeftRight },
-  { to: '/devolucao', label: 'Devolução', icon: CornerDownLeft },
-  { to: '/renovacao', label: 'Renovação', icon: RefreshCw },
   { to: '/relatorios', label: 'Relatórios', icon: BarChart3 },
   { to: '/cursos', label: 'Cursos', icon: GraduationCap },
 ]
 
 const ADMIN_ITEMS: NavItem[] = [
   { to: '/configuracoes', label: 'Configurações', icon: Settings },
-  { to: '/importacao', label: 'Importação', icon: Upload },
+  { to: '/importacao', label: 'Importação e pendências', icon: Upload },
 ]
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
