@@ -104,9 +104,23 @@ class Collection {
 
   private async load(options: RecordValue = {}) {
     const table = TABLES[this.name]
-    const { data, error } = await supabase.from(table).select(SELECTS[this.name] ?? '*')
-    if (error) throw error
-    return sortRecords((data ?? []).map((row) => fromDb(this.name, row)), options.sort).filter((row) =>
+    const pageSize = 1000
+    const rows: RecordValue[] = []
+
+    for (let from = 0; ; from += pageSize) {
+      const { data, error } = await supabase
+        .from(table)
+        .select(SELECTS[this.name] ?? '*')
+        .order('id')
+        .range(from, from + pageSize - 1)
+      if (error) throw error
+
+      const page = data ?? []
+      rows.push(...page)
+      if (page.length < pageSize) break
+    }
+
+    return sortRecords(rows.map((row) => fromDb(this.name, row)), options.sort).filter((row) =>
       matchesFilter(row, options.filter),
     )
   }
