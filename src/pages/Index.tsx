@@ -98,6 +98,8 @@ export default function Index() {
 
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
+  const [searching, setSearching] = useState(false)
+  const [searchCompleted, setSearchCompleted] = useState(false)
 
   const [leitorFichaId, setLeitorFichaId] = useState<string | null>(null)
   const [leitorFichaOpen, setLeitorFichaOpen] = useState(false)
@@ -127,13 +129,20 @@ export default function Index() {
   useEffect(() => {
     if (!searchQuery.trim()) {
       setSearchResults([])
+      setSearching(false)
+      setSearchCompleted(false)
       return
     }
+    setSearching(true)
+    setSearchCompleted(false)
     const timer = setTimeout(async () => {
       try {
         setSearchResults(await searchDashboard(searchQuery))
       } catch {
         setSearchResults([])
+      } finally {
+        setSearching(false)
+        setSearchCompleted(true)
       }
     }, 300)
     return () => clearTimeout(timer)
@@ -196,11 +205,18 @@ export default function Index() {
           placeholder="Buscar usuário ou livro..."
           className="h-12 text-base pl-12 border-gray-200"
         />
-        {searchResults.length > 0 && (
+        {searchQuery.trim() && (searching || searchCompleted) && (
           <>
             <div className="fixed inset-0 z-10" onClick={() => setSearchResults([])} />
             <div className="absolute z-20 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-lg max-h-80 overflow-y-auto">
-              {searchResults.map((r) => (
+              {searching ? (
+                <p className="px-4 py-3 text-sm text-gray-500">Buscando leitores e livros...</p>
+              ) : searchResults.length === 0 ? (
+                <div className="px-4 py-3">
+                  <p className="font-medium text-gray-800">Nenhum resultado encontrado.</p>
+                  <p className="text-sm text-gray-500 mt-1">Confira o número ou nome. Se ainda não houver dados importados, a busca ficará vazia.</p>
+                </div>
+              ) : searchResults.map((r) => (
                 <button
                   key={`${r.type}-${r.id}`}
                   onClick={() => (r.type === 'leitor' ? openLeitor(r.id) : openLivro(r.id))}
