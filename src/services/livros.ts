@@ -4,7 +4,7 @@ export type LivroStatus = 'disponível' | 'emprestado' | 'manutenção' | 'extra
 
 export interface Livro {
   id: string
-  numero_cadastro: string
+  numero_cadastro?: string
   titulo: string
   autor: string
   editora: string
