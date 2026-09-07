@@ -136,10 +136,14 @@ class Collection {
   }
 
   async getOne<T = RecordValue>(id: string): Promise<T> {
-    const rows = await this.load()
-    const row = rows.find((item) => item.id === id)
-    if (!row) throw new Error('Registro não encontrado')
-    return row as T
+    const table = TABLES[this.name]
+    const { data, error } = await supabase
+      .from(table)
+      .select(SELECTS[this.name] ?? '*')
+      .eq('id', id)
+      .single()
+    if (error) throw error
+    return fromDb(this.name, data) as T
   }
 
   async getFirstListItem<T = RecordValue>(filter: string, options: RecordValue = {}): Promise<T> {
