@@ -104,9 +104,23 @@ class Collection {
 
   private async load(options: RecordValue = {}) {
     const table = TABLES[this.name]
-    const { data, error } = await supabase.from(table).select(SELECTS[this.name] ?? '*')
-    if (error) throw error
-    return sortRecords((data ?? []).map((row) => fromDb(this.name, row)), options.sort).filter((row) =>
+    const pageSize = 1000
+    let allData: any[] = []
+    let from = 0
+
+    while (true) {
+      const { data, error } = await supabase
+        .from(table)
+        .select(SELECTS[this.name] ?? '*')
+        .range(from, from + pageSize - 1)
+      if (error) throw error
+      if (!data || data.length === 0) break
+      allData.push(...data)
+      if (data.length < pageSize) break
+      from += pageSize
+    }
+
+    return sortRecords(allData.map((row) => fromDb(this.name, row)), options.sort).filter((row) =>
       matchesFilter(row, options.filter),
     )
   }
@@ -122,10 +136,14 @@ class Collection {
   }
 
   async getOne<T = RecordValue>(id: string): Promise<T> {
-    const rows = await this.load()
-    const row = rows.find((item) => item.id === id)
-    if (!row) throw new Error('Registro não encontrado')
-    return row as T
+    const table = TABLES[this.name]
+    const { data, error } = await supabase
+      .from(table)
+      .select(SELECTS[this.name] ?? '*')
+      .eq('id', id)
+      .single()
+    if (error || !data) throw new Error('Registro não encontrado')
+    return fromDb(this.name, data) as T
   }
 
   async getFirstListItem<T = RecordValue>(filter: string, options: RecordValue = {}): Promise<T> {
