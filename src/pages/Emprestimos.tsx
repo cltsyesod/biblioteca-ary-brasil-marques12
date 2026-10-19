@@ -93,10 +93,12 @@ export default function Emprestimos() {
     return [...emprestimos].sort((a, b) => {
       const sa = getSituacao(a.data_prevista_devolucao)
       const sb = getSituacao(b.data_prevista_devolucao)
-      const pa = SITUACAO_PRIORITY[sa]
-      const pb = SITUACAO_PRIORITY[sb]
+      const pa = SITUACAO_PRIORITY[sa] ?? 3
+      const pb = SITUACAO_PRIORITY[sb] ?? 3
       if (pa !== pb) return pa - pb
-      return a.data_prevista_devolucao.localeCompare(b.data_prevista_devolucao)
+      const da = String(a.data_prevista_devolucao || '')
+      const db = String(b.data_prevista_devolucao || '')
+      return da.localeCompare(db)
     })
   }, [emprestimos])
 
@@ -110,10 +112,10 @@ export default function Emprestimos() {
       if (filter === 'comum' && (emp.tipo_emprestimo || 'comum') !== 'comum') return false
       if (filter === 'estudo' && emp.tipo_emprestimo !== 'estudo') return false
       if (!q) return true
-      const nome = emp.expand?.leitor?.nome_completo?.toLowerCase() || ''
-      const numLeitor = emp.expand?.leitor?.numero_cadastro?.toLowerCase() || ''
-      const titulo = emp.expand?.livro?.titulo?.toLowerCase() || ''
-      const numLivro = emp.expand?.livro?.numero_cadastro?.toLowerCase() || ''
+      const nome = String(emp.expand?.leitor?.nome_completo || '').toLowerCase()
+      const numLeitor = String(emp.expand?.leitor?.numero_cadastro || '').toLowerCase()
+      const titulo = String(emp.expand?.livro?.titulo || '').toLowerCase()
+      const numLivro = String(emp.expand?.livro?.numero_cadastro || '').toLowerCase()
       return nome.includes(q) || numLeitor.includes(q) || titulo.includes(q) || numLivro.includes(q)
     })
   }, [sorted, search, filter])
@@ -252,9 +254,11 @@ export default function Emprestimos() {
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation()
-                        if (emp.expand?.leitor) openLeitor(emp.expand.leitor.id)
+                        const targetId = emp.expand?.leitor?.id || emp.leitor
+                        if (targetId) openLeitor(targetId)
                       }}
                       className="flex items-start gap-3 text-left hover:opacity-80 transition-opacity flex-1"
                     >
@@ -271,9 +275,11 @@ export default function Emprestimos() {
                       </div>
                     </button>
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation()
-                        if (emp.expand?.livro) openLivro(emp.expand.livro.id)
+                        const targetId = emp.expand?.livro?.id || emp.livro
+                        if (targetId) openLivro(targetId)
                       }}
                       className="flex items-start gap-3 text-left hover:opacity-80 transition-opacity flex-1"
                     >

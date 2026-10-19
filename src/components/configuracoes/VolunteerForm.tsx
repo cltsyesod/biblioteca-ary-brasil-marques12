@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Loader2, UserPlus, BadgeCheck } from 'lucide-react'
+import { Loader2, UserPlus, BadgeCheck, ShieldAlert, Shield } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -22,6 +22,7 @@ import {
   updateVoluntario,
   type Voluntario,
   type VoluntarioStatus,
+  type VoluntarioRole,
 } from '@/services/voluntarios'
 import { toast } from 'sonner'
 
@@ -39,14 +40,22 @@ export function VolunteerForm({
   onSaved,
 }: VolunteerFormProps) {
   const [loading, setLoading] = useState(false)
-  const [form, setForm] = useState({ nome: '', status: 'ativo' as VoluntarioStatus })
+  const [form, setForm] = useState({
+    nome: '',
+    status: 'ativo' as VoluntarioStatus,
+    role: 'voluntario' as VoluntarioRole,
+  })
 
   useEffect(() => {
     if (open) {
       if (editingVoluntario) {
-        setForm({ nome: editingVoluntario.nome, status: editingVoluntario.status })
+        setForm({
+          nome: editingVoluntario.nome,
+          status: editingVoluntario.status,
+          role: editingVoluntario.role || 'voluntario',
+        })
       } else {
-        setForm({ nome: '', status: 'ativo' })
+        setForm({ nome: '', status: 'ativo', role: 'voluntario' })
       }
     }
   }, [open, editingVoluntario])
@@ -59,11 +68,16 @@ export function VolunteerForm({
         await updateVoluntario(editingVoluntario.id, {
           nome: form.nome.trim(),
           status: form.status,
+          role: form.role,
         })
         onSaved()
         onOpenChange(false)
       } else {
-        const created = await createVoluntario({ nome: form.nome.trim(), status: form.status })
+        const created = await createVoluntario({
+          nome: form.nome.trim(),
+          status: form.status,
+          role: form.role,
+        })
         onSaved(created)
         onOpenChange(false)
       }
@@ -84,8 +98,8 @@ export function VolunteerForm({
           </DialogTitle>
           <DialogDescription className="text-base">
             {editingVoluntario
-              ? 'Altere os dados do voluntário.'
-              : 'Cadastre um novo voluntário no sistema.'}
+              ? 'Altere os dados e o nível de acesso do voluntário.'
+              : 'Cadastre um novo voluntário e defina seu nível de acesso.'}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -98,15 +112,51 @@ export function VolunteerForm({
               </div>
             </div>
           )}
+
           <div className="space-y-2">
             <Label className="text-base font-semibold">Nome *</Label>
             <Input
               value={form.nome}
               onChange={(e) => setForm({ ...form, nome: e.target.value })}
               className="h-12 text-base"
+              placeholder="Nome completo do voluntário"
               required
             />
           </div>
+
+          <div className="space-y-2">
+            <Label className="text-base font-semibold">Nível de Acesso (Hierarquia) *</Label>
+            <Select
+              value={form.role}
+              onValueChange={(v) => setForm({ ...form, role: v as VoluntarioRole })}
+            >
+              <SelectTrigger className="h-12 text-base">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="voluntario">
+                  <div className="flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-blue-600" />
+                    <span className="font-semibold text-gray-900">Voluntário</span>
+                    <span className="text-xs text-gray-500">(Operacional)</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="administrador">
+                  <div className="flex items-center gap-2">
+                    <ShieldAlert className="w-4 h-4 text-purple-600" />
+                    <span className="font-semibold text-gray-900">Administrador</span>
+                    <span className="text-xs text-purple-600 font-bold">(Acesso Total)</span>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-gray-500">
+              {form.role === 'administrador'
+                ? 'Administradores têm acesso completo: Configurações, relatórios e exclusões de registros.'
+                : 'Voluntários têm acesso operacional: Empréstimos, devoluções, renovações e consulta ao acervo.'}
+            </p>
+          </div>
+
           {editingVoluntario && (
             <div className="space-y-2">
               <Label className="text-base font-semibold">Status *</Label>
@@ -124,6 +174,7 @@ export function VolunteerForm({
               </Select>
             </div>
           )}
+
           <div className="flex gap-3 pt-2">
             <Button
               type="button"

@@ -20,13 +20,16 @@ import Cursos from '@/pages/Cursos'
 import Importacao from '@/pages/Importacao'
 import NotFound from '@/pages/NotFound'
 
+import { ErrorBoundary } from '@/components/ErrorBoundary'
+
 const App = () => (
-  <BrowserRouter>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <Routes>
+  <ErrorBoundary fallbackTitle="Ocorreu um erro no sistema da biblioteca">
+    <BrowserRouter>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <Routes>
           <Route path="/login" element={<Login />} />
 
           <Route
@@ -68,6 +71,7 @@ const App = () => (
       </TooltipProvider>
     </AuthProvider>
   </BrowserRouter>
+  </ErrorBoundary>
 )
 
 export default App

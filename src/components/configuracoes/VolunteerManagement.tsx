@@ -124,6 +124,15 @@ export function VolunteerManagement() {
                 <span className="text-base font-semibold text-gray-900">{v.nome}</span>
                 <Badge
                   className={
+                    v.role === 'administrador'
+                      ? 'bg-purple-100 text-purple-800 border border-purple-200 hover:bg-purple-100 font-semibold text-xs'
+                      : 'bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-100 font-medium text-xs'
+                  }
+                >
+                  {v.role === 'administrador' ? 'Administrador' : 'Voluntário'}
+                </Badge>
+                <Badge
+                  className={
                     v.status === 'ativo'
                       ? 'bg-green-100 text-green-800 hover:bg-green-100'
                       : 'bg-red-100 text-red-800 hover:bg-red-100'
@@ -173,6 +182,7 @@ export function VolunteerManagement() {
         onOpenChange={setFormOpen}
         editingVoluntario={editingVoluntario}
         onSaved={(created) => {
+          loadData()
           if (created?.matricula) {
             toast.success('Voluntário cadastrado com sucesso.', {
               description: `Matrícula: ${created.matricula}`,

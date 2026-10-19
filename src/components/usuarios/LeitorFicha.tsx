@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { BookOpen, Calendar, Mail, MapPin, Phone, StickyNote, User } from 'lucide-react'
@@ -112,6 +112,9 @@ export function LeitorFicha({ leitorId, open, onOpenChange }: LeitorFichaProps) 
         <SheetContent className="w-full sm:max-w-lg max-h-[100vh] overflow-y-auto">
           <SheetHeader>
             <SheetTitle className="text-xl font-bold">Ficha do Usuário</SheetTitle>
+            <SheetDescription className="sr-only">
+              Informações do usuário e histórico de empréstimos
+            </SheetDescription>
           </SheetHeader>
 
           {loading ? (
@@ -266,16 +269,21 @@ export function LeitorFicha({ leitorId, open, onOpenChange }: LeitorFichaProps) 
                             <p>Devolução: {formatDate(emp.data_prevista_devolucao)}</p>
                             <p className="flex items-center gap-2">
                               Situação:{' '}
-                              <Badge className={SITUACAO_BADGE[situacao]}>
-                                {SITUACAO_LABELS[situacao]}
+                              <Badge className={SITUACAO_BADGE[situacao] || SITUACAO_BADGE['sem-data']}>
+                                {SITUACAO_LABELS[situacao] || 'Data não informada'}
                               </Badge>
                             </p>{' '}
-                            {emp.expand?.responsavel && (
+                            {emp.expand?.responsavel_voluntario ? (
+                              <p className="text-sm text-gray-600">
+                                Responsável: {emp.expand.responsavel_voluntario.matricula || '—'} —{' '}
+                                {emp.expand.responsavel_voluntario.nome}
+                              </p>
+                            ) : emp.expand?.responsavel ? (
                               <p className="text-sm text-gray-600">
                                 Responsável: {emp.expand.responsavel.matricula || '—'} —{' '}
-                                {emp.expand.responsavel.name}
+                                {emp.expand.responsavel.nome || emp.expand.responsavel.name || '—'}
                               </p>
-                            )}
+                            ) : null}
                           </div>
                         </div>
                       )

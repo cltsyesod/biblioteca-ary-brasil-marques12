@@ -40,10 +40,13 @@ import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
 function getLoanSituation(dataPrevista: string): { label: string; isLate: boolean } {
+  if (!dataPrevista) return { label: 'Data não informada', isLate: false }
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const normalized = normalizeToDate(dataPrevista)
+  if (!normalized) return { label: 'Data não informada', isLate: false }
   const due = new Date(normalized + 'T00:00:00')
+  if (isNaN(due.getTime())) return { label: 'Data não informada', isLate: false }
   due.setHours(0, 0, 0, 0)
   return { label: today > due ? 'Atrasado' : 'No prazo', isLate: today > due }
 }
