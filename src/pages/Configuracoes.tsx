@@ -3,6 +3,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { LoanSettings } from '@/components/configuracoes/LoanSettings'
 import { LibrarySettings } from '@/components/configuracoes/LibrarySettings'
 import { VolunteerManagement } from '@/components/configuracoes/VolunteerManagement'
+import { SecuritySettings } from '@/components/configuracoes/SecuritySettings'
 
 export default function Configuracoes() {
   return (
@@ -18,7 +19,7 @@ export default function Configuracoes() {
       </div>
 
       <Tabs defaultValue="emprestimos" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 max-w-xl h-11">
+        <TabsList className="grid w-full grid-cols-4 max-w-2xl h-11">
           <TabsTrigger value="emprestimos" className="text-sm font-medium">
             Empréstimos
           </TabsTrigger>
@@ -27,6 +28,9 @@ export default function Configuracoes() {
           </TabsTrigger>
           <TabsTrigger value="voluntarios" className="text-sm font-medium">
             Equipe & Voluntários
+          </TabsTrigger>
+          <TabsTrigger value="seguranca" className="text-sm font-medium">
+            Segurança
           </TabsTrigger>
         </TabsList>
         <TabsContent value="emprestimos" className="mt-6">
@@ -37,6 +41,9 @@ export default function Configuracoes() {
         </TabsContent>
         <TabsContent value="voluntarios" className="mt-6">
           <VolunteerManagement />
+        </TabsContent>
+        <TabsContent value="seguranca" className="mt-6">
+          <SecuritySettings />
         </TabsContent>
       </Tabs>
     </div>

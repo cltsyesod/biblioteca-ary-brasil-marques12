@@ -8,6 +8,7 @@ import Layout from '@/components/Layout'
 
 import Index from '@/pages/Index'
 import Login from '@/pages/Login'
+import ResetPassword from '@/pages/ResetPassword'
 import Usuarios from '@/pages/Usuarios'
 import Acervo from '@/pages/Acervo'
 import Emprestimos from '@/pages/Emprestimos'
@@ -28,6 +29,7 @@ const App = () => (
         <Sonner />
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           <Route
             element={
