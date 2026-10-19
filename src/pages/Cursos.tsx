@@ -1,12 +1,14 @@
-import { useEffect, useState, useCallback } from 'react'
-import { GraduationCap, BookPlus, ChevronRight } from 'lucide-react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
+import { GraduationCap, BookPlus, ChevronRight, ArrowUpDown, Calendar, SortAsc } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { CursoForm } from '@/components/cursos/CursoForm'
 import { CursoDetail } from '@/components/cursos/CursoDetail'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { getCursos, type Curso } from '@/services/cursos'
 import { useRealtime } from '@/hooks/use-realtime'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 
 export default function Cursos() {
   const [cursos, setCursos] = useState<Curso[]>([])
@@ -16,6 +18,7 @@ export default function Cursos() {
   const [detailOpen, setDetailOpen] = useState(false)
   const [editCurso, setEditCurso] = useState<Curso | null>(null)
   const [editFormOpen, setEditFormOpen] = useState(false)
+  const [sortBy, setSortBy] = useState<'cadastro' | 'ano' | 'nome'>('cadastro')
 
   const loadData = useCallback(async () => {
     try {
@@ -36,16 +39,39 @@ export default function Cursos() {
     loadData()
   })
 
+  const sortedCursos = useMemo(() => {
+    const list = [...cursos]
+    if (sortBy === 'nome') {
+      return list.sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR'))
+    }
+    if (sortBy === 'ano') {
+      return list.sort((a, b) =>
+        String(a.ano_nivel_etapa || '').localeCompare(String(b.ano_nivel_etapa || ''), 'pt-BR', {
+          numeric: true,
+        }),
+      )
+    }
+    // Ordem de cadastro (data de criação)
+    return list.sort((a, b) => {
+      const dateA = a.created ? new Date(a.created).getTime() : 0
+      const dateB = b.created ? new Date(b.created).getTime() : 0
+      if (dateA !== dateB) return dateA - dateB
+      return String(a.id || '').localeCompare(String(b.id || ''))
+    })
+  }, [cursos, sortBy])
+
   const handleRowClick = (curso: Curso) => {
     setDetailCurso(curso)
     setDetailOpen(true)
   }
 
   const handleCreated = () => {
+    loadData()
     toast.success('Curso cadastrado com sucesso!')
   }
 
   const handleEditSaved = () => {
+    loadData()
     toast.success('Curso atualizado com sucesso!')
   }
 
@@ -71,12 +97,63 @@ export default function Cursos() {
         </div>
         <Button
           onClick={() => setFormOpen(true)}
-          className="h-14 px-6 text-lg font-bold bg-[#1F5C8B] hover:bg-[#174A73] shadow-sm"
+          className="h-12 px-5 text-base font-bold bg-[#1F5C8B] hover:bg-[#174A73] shadow-sm"
         >
-          <BookPlus className="w-6 h-6 mr-2" />
+          <BookPlus className="w-5 h-5 mr-2" />
           Novo curso
         </Button>
       </div>
+
+      {/* Barra de Ordenação */}
+      {cursos.length > 1 && (
+        <div className="flex items-center gap-2 pt-1 pb-1">
+          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1.5 mr-1">
+            <ArrowUpDown className="w-3.5 h-3.5" />
+            Ordenar por:
+          </span>
+          <div className="flex items-center gap-1.5 bg-gray-100/80 p-1 rounded-lg border border-gray-200">
+            <button
+              type="button"
+              onClick={() => setSortBy('cadastro')}
+              className={cn(
+                'px-3 py-1.5 text-xs font-bold rounded-md transition-all flex items-center gap-1',
+                sortBy === 'cadastro'
+                  ? 'bg-white text-[#1F5C8B] shadow-xs'
+                  : 'text-gray-600 hover:text-gray-900',
+              )}
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              Ordem de cadastro
+            </button>
+            <button
+              type="button"
+              onClick={() => setSortBy('ano')}
+              className={cn(
+                'px-3 py-1.5 text-xs font-bold rounded-md transition-all flex items-center gap-1',
+                sortBy === 'ano'
+                  ? 'bg-white text-[#1F5C8B] shadow-xs'
+                  : 'text-gray-600 hover:text-gray-900',
+              )}
+            >
+              <GraduationCap className="w-3.5 h-3.5" />
+              Ano / Etapa
+            </button>
+            <button
+              type="button"
+              onClick={() => setSortBy('nome')}
+              className={cn(
+                'px-3 py-1.5 text-xs font-bold rounded-md transition-all flex items-center gap-1',
+                sortBy === 'nome'
+                  ? 'bg-white text-[#1F5C8B] shadow-xs'
+                  : 'text-gray-600 hover:text-gray-900',
+              )}
+            >
+              <SortAsc className="w-3.5 h-3.5" />
+              Nome (A-Z)
+            </button>
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <div className="space-y-3">
@@ -84,7 +161,7 @@ export default function Cursos() {
             <Skeleton key={i} className="h-20 w-full rounded-lg" />
           ))}
         </div>
-      ) : cursos.length === 0 ? (
+      ) : sortedCursos.length === 0 ? (
         <div className="text-center py-16">
           <GraduationCap className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <p className="text-lg font-semibold text-gray-600">Nenhum curso cadastrado.</p>
@@ -99,7 +176,7 @@ export default function Cursos() {
             <span>Ano, nível ou etapa</span>
             <span></span>
           </div>
-          {cursos.map((curso) => (
+          {sortedCursos.map((curso) => (
             <button
               key={curso.id}
               onClick={() => handleRowClick(curso)}
@@ -125,12 +202,14 @@ export default function Cursos() {
         onSaved={handleEditSaved}
         curso={editCurso}
       />
-      <CursoDetail
-        curso={detailCurso}
-        open={detailOpen}
-        onOpenChange={setDetailOpen}
-        onEdit={handleEdit}
-      />
+      <ErrorBoundary fallbackTitle="Não foi possível exibir os detalhes deste curso">
+        <CursoDetail
+          curso={detailCurso}
+          open={detailOpen}
+          onOpenChange={setDetailOpen}
+          onEdit={handleEdit}
+        />
+      </ErrorBoundary>
     </div>
   )
 }

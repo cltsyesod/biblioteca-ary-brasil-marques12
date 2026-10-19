@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/select'
 import { LivroForm } from '@/components/acervo/LivroForm'
 import { LivroFicha } from '@/components/acervo/LivroFicha'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { getLivros, STATUS_LABELS, STATUS_BADGE_CLASSES, type Livro } from '@/services/livros'
 import { formatNumeroCadastro, parseNumeroCadastroSortKey } from '@/lib/code-formatter'
 import { useRealtime } from '@/hooks/use-realtime'
@@ -109,8 +110,8 @@ export default function Acervo() {
   const sortedLivros = useMemo(() => {
     const list = [...filtered]
     list.sort((a, b) => {
-      const valA = (a[sortField] || '').trim()
-      const valB = (b[sortField] || '').trim()
+      const valA = String(a[sortField] ?? '').trim()
+      const valB = String(b[sortField] ?? '').trim()
 
       if (sortField === 'numero_cadastro') {
         const keyA = parseNumeroCadastroSortKey(valA)
@@ -329,7 +330,9 @@ export default function Acervo() {
       <LivroForm open={formOpen} onOpenChange={setFormOpen} onSaved={handleCreated} />
 
       {/* Book Ficha Sheet */}
-      <LivroFicha livroId={fichaId} open={fichaOpen} onOpenChange={setFichaOpen} />
+      <ErrorBoundary fallbackTitle="Não foi possível exibir a ficha deste livro">
+        <LivroFicha livroId={fichaId} open={fichaOpen} onOpenChange={setFichaOpen} />
+      </ErrorBoundary>
     </div>
   )
 }

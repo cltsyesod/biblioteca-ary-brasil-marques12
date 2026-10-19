@@ -4,6 +4,7 @@ import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { AuthProvider } from '@/hooks/use-auth'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import Layout from '@/components/Layout'
 
 import Index from '@/pages/Index'
@@ -27,17 +28,18 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
+        <ErrorBoundary>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
 
-          <Route
-            element={
-              <ProtectedRoute>
-                <Layout />
-              </ProtectedRoute>
-            }
-          >
+            <Route
+              element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }
+            >
             <Route path="/" element={<Index />} />
             <Route path="/usuarios" element={<Usuarios />} />
             <Route path="/acervo" element={<Acervo />} />
@@ -67,6 +69,7 @@ const App = () => (
 
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </ErrorBoundary>
       </TooltipProvider>
     </AuthProvider>
   </BrowserRouter>

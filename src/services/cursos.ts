@@ -29,7 +29,7 @@ export interface CursoLivro {
 
 export const getCursos = async (): Promise<Curso[]> => {
   return await pb.collection('cursos').getFullList<Curso>({
-    sort: 'nome',
+    sort: 'created',
   })
 }
 

@@ -10,6 +10,7 @@ import { LeitorFicha } from '@/components/usuarios/LeitorFicha'
 import { getLeitores, type Leitor } from '@/services/leitores'
 import { formatNumeroCadastro } from '@/lib/code-formatter'
 import { useRealtime } from '@/hooks/use-realtime'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { toast } from 'sonner'
 
 export default function Usuarios() {
@@ -172,7 +173,9 @@ export default function Usuarios() {
       <LeitorForm open={formOpen} onOpenChange={setFormOpen} onSaved={handleCreated} />
 
       {/* User Ficha Sheet */}
-      <LeitorFicha leitorId={fichaId} open={fichaOpen} onOpenChange={setFichaOpen} />
+      <ErrorBoundary fallbackTitle="Não foi possível exibir a ficha deste usuário">
+        <LeitorFicha leitorId={fichaId} open={fichaOpen} onOpenChange={setFichaOpen} />
+      </ErrorBoundary>
     </div>
   )
 }

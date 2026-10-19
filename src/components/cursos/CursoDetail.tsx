@@ -93,9 +93,9 @@ export function CursoDetail({ curso, open, onOpenChange, onEdit }: CursoDetailPr
     if (!q) return !linkedLivroIds.has(livro.id)
     return (
       !linkedLivroIds.has(livro.id) &&
-      (livro.numero_cadastro.toLowerCase().includes(q) ||
-        livro.titulo.toLowerCase().includes(q) ||
-        livro.autor.toLowerCase().includes(q))
+      (String(livro.numero_cadastro ?? '').toLowerCase().includes(q) ||
+        String(livro.titulo ?? '').toLowerCase().includes(q) ||
+        String(livro.autor ?? '').toLowerCase().includes(q))
     )
   })
 
