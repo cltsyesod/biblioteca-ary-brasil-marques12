@@ -1,6 +1,6 @@
-# Projeto Criado com o Skip
+# Biblioteca Ary Brasil Marques - Joanna de Ângelis
 
-Este projeto foi criado de ponta a ponta com o [Skip](https://goskip.dev).
+Sistema de Gestão e Controle Bibliotecário da Joanna de Ângelis.
 
 ## 🚀 Stack Tecnológica
 

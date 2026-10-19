@@ -9,7 +9,7 @@ migrate(
 
     const record = new Record(users)
     record.setEmail('camilimag@gmail.com')
-    record.setPassword('Skip@Pass')
+    record.setPassword('Admin@Pass123')
     record.setVerified(true)
     record.set('name', 'Voluntário Admin')
     app.save(record)

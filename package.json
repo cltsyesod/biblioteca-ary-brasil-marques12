@@ -1,8 +1,8 @@
 {
-  "name": "skip-react-template",
-  "description": "A frontend React Vite TypeScript Shadcn UI template for Skip projects",
+  "name": "biblioteca-ary-brasil-marques",
+  "description": "Sistema de Gestão da Biblioteca Ary Brasil Marques - Joanna de Ângelis",
   "private": true,
-  "version": "0.0.64",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "start": "vite dev",
