@@ -76,12 +76,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     let active = true
     const hydrate = async () => {
-      const { data: { user: authUser } } = await supabase.auth.getUser()
-      const profile = authUser ? await loadProfile(authUser.id, authUser.email) : null
-      if (!active) return
-      setUser(profile)
-      if (authUser && !profile) await supabase.auth.signOut()
-      setLoading(false)
+      try {
+        const { data: { user: authUser } } = await Promise.race([
+          supabase.auth.getUser(),
+          new Promise<{ data: { user: null } }>((resolve) =>
+            setTimeout(() => resolve({ data: { user: null } }), 4000)
+          ),
+        ])
+        const profile = authUser ? await loadProfile(authUser.id, authUser.email) : null
+        if (!active) return
+        setUser(profile)
+        if (authUser && !profile) await supabase.auth.signOut()
+      } catch (err) {
+        console.error('Auth hydration error:', err)
+        if (active) setUser(null)
+      } finally {
+        if (active) setLoading(false)
+      }
     }
     hydrate()
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -95,6 +106,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(profile)
         if (!profile) await supabase.auth.signOut()
         setLoading(false)
+      }).catch(() => {
+        if (active) setLoading(false)
       })
     })
     return () => {
