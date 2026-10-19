@@ -19,6 +19,7 @@ import { toast } from 'sonner'
 import { useRealtime } from '@/hooks/use-realtime'
 import { useAuth } from '@/hooks/use-auth'
 import { cn } from '@/lib/utils'
+import { formatNumeroCadastro } from '@/lib/code-formatter'
 import {
   formatDateTime,
   formatDate,
@@ -77,13 +78,26 @@ export function LeitorFicha({ leitorId, open, onOpenChange }: LeitorFichaProps) 
     }
     setLoading(true)
     try {
-      const [l, emps] = await Promise.all([getLeitor(leitorId), getEmprestimosByLeitor(leitorId)])
+      const l = await getLeitor(leitorId)
       setLeitor(l)
-      setEmprestimos(emps)
-      const movs = await getMovementsFromEmprestimos(emps)
-      setMovements(movs)
-    } catch {
-      // ignore
+    } catch (err) {
+      console.error('Erro ao buscar leitor:', err)
+      toast.error('Erro ao carregar dados do usuário.')
+    }
+
+    try {
+      const emps = await getEmprestimosByLeitor(leitorId)
+      setEmprestimos(emps || [])
+      try {
+        const movs = await getMovementsFromEmprestimos(emps || [])
+        setMovements(movs || [])
+      } catch {
+        setMovements([])
+      }
+    } catch (err) {
+      console.error('Erro ao buscar empréstimos do usuário:', err)
+      setEmprestimos([])
+      setMovements([])
     } finally {
       setLoading(false)
     }
@@ -130,7 +144,7 @@ export function LeitorFicha({ leitorId, open, onOpenChange }: LeitorFichaProps) 
                 </h2>
                 <div className="flex items-center gap-2 mt-2">
                   <span className="text-base font-medium text-gray-600">
-                    Nº {leitor.numero_cadastro}
+                    Nº {formatNumeroCadastro(leitor.numero_cadastro)}
                   </span>
                   <Badge
                     className={
@@ -259,7 +273,7 @@ export function LeitorFicha({ leitorId, open, onOpenChange }: LeitorFichaProps) 
                             <p>
                               Livro nº{' '}
                               <span className="font-semibold">
-                                {emp.expand?.livro?.numero_cadastro || '—'}
+                                {formatNumeroCadastro(emp.expand?.livro?.numero_cadastro)}
                               </span>
                             </p>
                             <p>
@@ -273,15 +287,15 @@ export function LeitorFicha({ leitorId, open, onOpenChange }: LeitorFichaProps) 
                                 {SITUACAO_LABELS[situacao] || 'Data não informada'}
                               </Badge>
                             </p>{' '}
-                            {emp.expand?.responsavel_voluntario ? (
+                            {emp.expand?.responsavel_voluntario && typeof emp.expand.responsavel_voluntario === 'object' ? (
                               <p className="text-sm text-gray-600">
                                 Responsável: {emp.expand.responsavel_voluntario.matricula || '—'} —{' '}
-                                {emp.expand.responsavel_voluntario.nome}
+                                {emp.expand.responsavel_voluntario.nome || '—'}
                               </p>
-                            ) : emp.expand?.responsavel ? (
+                            ) : emp.expand?.responsavel && typeof emp.expand.responsavel === 'object' ? (
                               <p className="text-sm text-gray-600">
                                 Responsável: {emp.expand.responsavel.matricula || '—'} —{' '}
-                                {emp.expand.responsavel.nome || emp.expand.responsavel.name || '—'}
+                                {emp.expand.responsavel.nome || (emp.expand.responsavel as any).name || '—'}
                               </p>
                             ) : null}
                           </div>
@@ -316,7 +330,7 @@ export function LeitorFicha({ leitorId, open, onOpenChange }: LeitorFichaProps) 
                         <p className="text-base font-semibold text-gray-900 mt-1">
                           {mov.bookTitle}
                         </p>
-                        <p className="text-sm text-gray-600">Nº {mov.bookNumeroCadastro}</p>
+                        <p className="text-sm text-gray-600">Nº {formatNumeroCadastro(mov.bookNumeroCadastro)}</p>
                         <p className="text-sm text-gray-600">
                           Responsável: {mov.volunteerMatricula} — {mov.volunteerName}
                         </p>
@@ -326,7 +340,12 @@ export function LeitorFicha({ leitorId, open, onOpenChange }: LeitorFichaProps) 
                 )}
               </div>
             </div>
-          ) : null}
+          ) : (
+            <div className="text-center py-12 text-gray-500">
+              <p className="text-base font-semibold">Não foi possível carregar os dados deste leitor.</p>
+              <p className="text-sm text-gray-400 mt-1">Verifique sua conexão ou tente novamente.</p>
+            </div>
+          )}
         </SheetContent>
       </Sheet>
       <LeitorForm

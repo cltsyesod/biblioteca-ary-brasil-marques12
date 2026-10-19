@@ -21,6 +21,7 @@ import {
 } from '@/lib/loan-utils'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { formatNumeroCadastro } from '@/lib/code-formatter'
 
 type FilterType = 'todos' | 'em-dia' | 'vence-hoje' | 'atrasados' | 'comum' | 'estudo'
 
@@ -204,7 +205,7 @@ export default function Emprestimos() {
                 <span className="text-lg font-bold text-gray-900">{leitor.nome_completo}</span>
               </div>
               <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 ml-8">
-                <span className="text-base text-gray-600">Cadastro: {leitor.numero_cadastro}</span>
+                <span className="text-base text-gray-600">Cadastro: {formatNumeroCadastro(leitor.numero_cadastro)}</span>
                 {leitor.telefone && (
                   <span className="text-base text-gray-600 flex items-center gap-1">
                     <Phone className="w-4 h-4" /> {leitor.telefone}
@@ -269,7 +270,7 @@ export default function Emprestimos() {
                         </p>
                         <p className="text-base text-gray-600">
                           {emp.expand?.leitor?.numero_cadastro
-                            ? `Nº ${emp.expand.leitor.numero_cadastro}`
+                            ? `Nº ${formatNumeroCadastro(emp.expand.leitor.numero_cadastro)}`
                             : '—'}
                         </p>
                       </div>
@@ -290,7 +291,7 @@ export default function Emprestimos() {
                         </p>
                         <p className="text-base text-gray-600">
                           {emp.expand?.livro?.numero_cadastro
-                            ? `Nº ${emp.expand.livro.numero_cadastro}`
+                            ? `Nº ${formatNumeroCadastro(emp.expand.livro.numero_cadastro)}`
                             : '—'}
                         </p>
                       </div>

@@ -23,6 +23,7 @@ import {
   SITUACAO_LABELS,
   SITUACAO_BADGE,
 } from '@/lib/loan-utils'
+import { formatNumeroCadastro } from '@/lib/code-formatter'
 
 const TIPO_LABELS: Record<string, string> = { comum: 'Comum', estudo: 'Estudo' }
 
@@ -136,7 +137,7 @@ export function EmprestimoDetalhes({
                     </p>
                     <p className="text-sm text-gray-600">
                       {emprestimo.expand?.leitor?.numero_cadastro
-                        ? `Nº ${emprestimo.expand.leitor.numero_cadastro}`
+                        ? `Nº ${formatNumeroCadastro(emprestimo.expand.leitor.numero_cadastro)}`
                         : '—'}
                     </p>
                   </div>
@@ -150,7 +151,7 @@ export function EmprestimoDetalhes({
                     </p>
                     <p className="text-sm text-gray-600">
                       {emprestimo.expand?.livro?.numero_cadastro
-                        ? `Nº ${emprestimo.expand.livro.numero_cadastro} · ${emprestimo.expand.livro.autor || '—'}`
+                        ? `Nº ${formatNumeroCadastro(emprestimo.expand.livro.numero_cadastro)} · ${emprestimo.expand.livro.autor || '—'}`
                         : '—'}
                     </p>
                   </div>
