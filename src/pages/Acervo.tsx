@@ -332,11 +332,18 @@ export default function Acervo() {
       )}
 
       {/* New Book Form Dialog */}
-      <LivroForm open={formOpen} onOpenChange={setFormOpen} onSaved={handleCreated} />
+      {formOpen && <LivroForm open={formOpen} onOpenChange={setFormOpen} onSaved={handleCreated} />}
 
       {/* Book Ficha Sheet */}
       <ErrorBoundary fallbackTitle="Não foi possível exibir a ficha deste livro">
-        <LivroFicha livroId={fichaId} open={fichaOpen} onOpenChange={setFichaOpen} />
+        <LivroFicha
+          livroId={fichaId}
+          open={fichaOpen}
+          onOpenChange={(open) => {
+            setFichaOpen(open)
+            if (!open) setFichaId(null)
+          }}
+        />
       </ErrorBoundary>
     </div>
   )

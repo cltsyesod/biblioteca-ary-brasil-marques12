@@ -13,6 +13,7 @@ import { Pencil, Trash2, User, BookOpen, Calendar, RefreshCw, UserCheck } from '
 import { getEmprestimo, excluirEmprestimo, type EmprestimoWithLeitor } from '@/services/emprestimos'
 import { EmprestimoEditForm } from '@/components/emprestimos/EmprestimoEditForm'
 import { DeleteConfirmDialog } from '@/components/DeleteConfirmDialog'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/use-auth'
@@ -106,14 +107,15 @@ export function EmprestimoDetalhes({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold">
-              {mode === 'edit' ? 'Editar Empréstimo' : 'Detalhes do Empréstimo'}
-            </DialogTitle>
-            <DialogDescription className="sr-only">
-              Visualização detalhada dos dados do empréstimo
-            </DialogDescription>
-          </DialogHeader>
+          <ErrorBoundary fallbackTitle="Erro ao exibir detalhes do empréstimo">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold">
+                {mode === 'edit' ? 'Editar Empréstimo' : 'Detalhes do Empréstimo'}
+              </DialogTitle>
+              <DialogDescription className="sr-only">
+                Visualização detalhada dos dados do empréstimo
+              </DialogDescription>
+            </DialogHeader>
 
           {loading ? (
             <div className="space-y-4 py-4">
@@ -229,17 +231,20 @@ export function EmprestimoDetalhes({
               </div>
             </div>
           ) : null}
+          </ErrorBoundary>
         </DialogContent>
       </Dialog>
-      <DeleteConfirmDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        onConfirm={handleDelete}
-        loading={deleting}
-        title="Excluir empréstimo"
-        description="Tem certeza que deseja excluir este empréstimo?"
-        confirmLabel="Excluir empréstimo"
-      />
+      {deleteOpen && (
+        <DeleteConfirmDialog
+          open={deleteOpen}
+          onOpenChange={setDeleteOpen}
+          onConfirm={handleDelete}
+          loading={deleting}
+          title="Excluir empréstimo"
+          description="Tem certeza que deseja excluir este empréstimo?"
+          confirmLabel="Excluir empréstimo"
+        />
+      )}
     </>
   )
 }

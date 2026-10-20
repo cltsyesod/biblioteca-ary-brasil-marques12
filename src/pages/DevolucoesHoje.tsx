@@ -108,7 +108,10 @@ export default function DevolucoesHoje() {
         <LeitorFicha
           leitorId={leitorFichaId}
           open={leitorFichaOpen}
-          onOpenChange={setLeitorFichaOpen}
+          onOpenChange={(open) => {
+            setLeitorFichaOpen(open)
+            if (!open) setLeitorFichaId(null)
+          }}
         />
       </ErrorBoundary>
     </div>

@@ -53,7 +53,7 @@ export const getCursoLivros = async (cursoId: string): Promise<CursoLivro[]> => 
   return await pb.collection('cursos_livros').getFullList<CursoLivro>({
     filter: `curso = "${cursoId}"`,
     expand: 'livro',
-    sort: '-created',
+    sort: 'created',
   })
 }
 

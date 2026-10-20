@@ -53,8 +53,10 @@ export default function Cursos() {
     }
     // Ordem de cadastro (data de criação)
     return list.sort((a, b) => {
-      const dateA = a.created ? new Date(a.created).getTime() : 0
-      const dateB = b.created ? new Date(b.created).getTime() : 0
+      const rawA = a.created || (a as any).created_at
+      const rawB = b.created || (b as any).created_at
+      const dateA = rawA ? new Date(rawA).getTime() : 0
+      const dateB = rawB ? new Date(rawB).getTime() : 0
       if (dateA !== dateB) return dateA - dateB
       return String(a.id || '').localeCompare(String(b.id || ''))
     })

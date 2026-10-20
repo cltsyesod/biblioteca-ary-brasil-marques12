@@ -343,17 +343,30 @@ export default function Emprestimos() {
         <LeitorFicha
           leitorId={leitorFichaId}
           open={leitorFichaOpen}
-          onOpenChange={setLeitorFichaOpen}
+          onOpenChange={(open) => {
+            setLeitorFichaOpen(open)
+            if (!open) setLeitorFichaId(null)
+          }}
         />
       </ErrorBoundary>
       <ErrorBoundary fallbackTitle="Não foi possível exibir a ficha do livro">
-        <LivroFicha livroId={livroFichaId} open={livroFichaOpen} onOpenChange={setLivroFichaOpen} />
+        <LivroFicha
+          livroId={livroFichaId}
+          open={livroFichaOpen}
+          onOpenChange={(open) => {
+            setLivroFichaOpen(open)
+            if (!open) setLivroFichaId(null)
+          }}
+        />
       </ErrorBoundary>
       <ErrorBoundary fallbackTitle="Não foi possível exibir os detalhes do empréstimo">
         <EmprestimoDetalhes
           emprestimoId={detalhesId}
           open={detalhesOpen}
-          onOpenChange={setDetalhesOpen}
+          onOpenChange={(open) => {
+            setDetalhesOpen(open)
+            if (!open) setDetalhesId(null)
+          }}
           onChanged={loadData}
         />
       </ErrorBoundary>

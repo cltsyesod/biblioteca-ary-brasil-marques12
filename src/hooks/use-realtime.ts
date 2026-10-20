@@ -11,8 +11,9 @@ export function useRealtime(
 
   useEffect(() => {
     if (!enabled) return
+    const channelName = `library:${table}:${Math.random().toString(36).substring(2, 9)}`
     const channel = supabase
-      .channel('library:' + table)
+      .channel(channelName)
       .on('postgres_changes', { event: '*', schema: 'public', table }, (payload) => callbackRef.current(payload))
       .subscribe()
     return () => {

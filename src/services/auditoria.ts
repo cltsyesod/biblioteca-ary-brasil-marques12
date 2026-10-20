@@ -28,40 +28,47 @@ export function getAcaoLabel(acao: string): string {
 }
 
 function makeMovementFromEmprestimo(emp: Emprestimo): AuditMovement {
+  const resp = emp.expand?.responsavel_voluntario || emp.expand?.responsavel
+  const respObj = Array.isArray(resp) ? resp[0] : resp
+  const volName = respObj?.nome || respObj?.name || '—'
+  const volMat = respObj?.matricula || '—'
   return {
-    id: emp.id,
+    id: String(emp.id || Math.random()),
     acao: 'emprestimo',
-    created: emp.created,
-    volunteerName: emp.expand?.responsavel?.nome || '—',
-    volunteerMatricula: emp.expand?.responsavel?.matricula || '—',
-    bookTitle: emp.expand?.livro?.titulo || '—',
-    bookNumeroCadastro: emp.expand?.livro?.numero_cadastro || '—',
+    created: String(emp.created || emp.data_emprestimo || ''),
+    volunteerName: typeof volName === 'string' ? volName : '—',
+    volunteerMatricula: typeof volMat === 'string' || typeof volMat === 'number' ? String(volMat) : '—',
+    bookTitle: typeof emp.expand?.livro?.titulo === 'string' ? emp.expand.livro.titulo : '—',
+    bookNumeroCadastro: emp.expand?.livro?.numero_cadastro ? String(emp.expand.livro.numero_cadastro) : '—',
     leitorNome: '—',
     leitorNumeroCadastro: '—',
   }
 }
 
 function makeMovementFromAudit(audit: any, emp?: Emprestimo): AuditMovement {
+  const empResp = emp?.expand?.responsavel_voluntario || emp?.expand?.responsavel
+  const empRespObj = Array.isArray(empResp) ? empResp[0] : empResp
   const volName =
-    audit.expand?.voluntario?.nome ||
-    audit.expand?.usuario?.name ||
-    emp?.expand?.responsavel?.nome ||
+    audit?.expand?.voluntario?.nome ||
+    audit?.expand?.usuario?.name ||
+    empRespObj?.nome ||
+    empRespObj?.name ||
     '—'
   const volMat =
-    audit.expand?.voluntario?.matricula ||
-    audit.expand?.usuario?.matricula ||
-    emp?.expand?.responsavel?.matricula ||
+    audit?.expand?.voluntario?.matricula ||
+    audit?.expand?.usuario?.matricula ||
+    empRespObj?.matricula ||
     '—'
   return {
-    id: audit.id,
-    acao: audit.acao === 'criacao' ? 'emprestimo' : audit.acao,
-    created: audit.created,
-    volunteerName: volName,
-    volunteerMatricula: volMat,
-    bookTitle: emp?.expand?.livro?.titulo || '—',
-    bookNumeroCadastro: emp?.expand?.livro?.numero_cadastro || '—',
-    leitorNome: emp?.expand?.leitor?.nome_completo || '—',
-    leitorNumeroCadastro: emp?.expand?.leitor?.numero_cadastro || '—',
+    id: String(audit?.id || Math.random()),
+    acao: audit?.acao === 'criacao' ? 'emprestimo' : String(audit?.acao || 'emprestimo'),
+    created: String(audit?.created || ''),
+    volunteerName: typeof volName === 'string' ? volName : '—',
+    volunteerMatricula: typeof volMat === 'string' || typeof volMat === 'number' ? String(volMat) : '—',
+    bookTitle: typeof emp?.expand?.livro?.titulo === 'string' ? emp.expand.livro.titulo : '—',
+    bookNumeroCadastro: emp?.expand?.livro?.numero_cadastro ? String(emp.expand.livro.numero_cadastro) : '—',
+    leitorNome: typeof emp?.expand?.leitor?.nome_completo === 'string' ? emp.expand.leitor.nome_completo : '—',
+    leitorNumeroCadastro: emp?.expand?.leitor?.numero_cadastro ? String(emp.expand.leitor.numero_cadastro) : '—',
   }
 }
 

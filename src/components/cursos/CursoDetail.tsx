@@ -24,6 +24,7 @@ import {
 } from '@/services/cursos'
 import { getLivros, type Livro } from '@/services/livros'
 import { useRealtime } from '@/hooks/use-realtime'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 interface CursoDetailProps {
   curso: Curso | null
@@ -127,7 +128,8 @@ export function CursoDetail({ curso, open, onOpenChange, onEdit }: CursoDetailPr
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent className="w-full sm:max-w-lg max-h-[100vh] overflow-y-auto">
-          <SheetHeader>
+          <ErrorBoundary fallbackTitle="Erro ao exibir detalhes do curso">
+            <SheetHeader>
             <div className="flex items-center justify-between gap-2">
               <SheetTitle className="text-xl font-bold">{curso.nome}</SheetTitle>
               <div className="flex items-center gap-2">
@@ -290,14 +292,20 @@ export function CursoDetail({ curso, open, onOpenChange, onEdit }: CursoDetailPr
               )}
             </div>
           </div>
+        </ErrorBoundary>
         </SheetContent>
       </Sheet>
-      <DeleteConfirmDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        onConfirm={handleDelete}
-        loading={deleting}
-      />
+      {deleteOpen && (
+        <DeleteConfirmDialog
+          open={deleteOpen}
+          onOpenChange={setDeleteOpen}
+          onConfirm={handleDelete}
+          loading={deleting}
+          title="Excluir curso"
+          description="Tem certeza que deseja excluir este curso?"
+          confirmLabel="Excluir curso"
+        />
+      )}
     </>
   )
 }

@@ -46,6 +46,15 @@ export class ErrorBoundary extends Component<Props, State> {
               {this.props.fallbackMessage ||
                 'Os dados recebidos continham um formato inesperado, mas o sistema protegeu sua navegação.'}
             </p>
+            {this.state.error && (
+              <div className="mt-3 p-3 bg-red-100/90 border border-red-300 rounded text-left text-xs font-mono text-red-900 overflow-x-auto max-h-48 whitespace-pre-wrap select-all">
+                <span className="font-bold">{this.state.error.name || 'Error'}: </span>
+                {this.state.error.message || String(this.state.error)}
+                {this.state.error.stack && (
+                  <pre className="mt-1 text-[11px] opacity-75 font-mono overflow-x-auto">{this.state.error.stack}</pre>
+                )}
+              </div>
+            )}
           </div>
           <div className="pt-2 flex justify-center gap-3">
             <Button

@@ -1,8 +1,9 @@
 import { useEffect, useState, useCallback } from 'react'
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { BookOpen, Calendar, Library, StickyNote, User, Building2, Tag } from 'lucide-react'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import {
   getLivro,
   deleteLivro,
@@ -109,9 +110,14 @@ export function LivroFicha({ livroId, open, onOpenChange }: LivroFichaProps) {
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent className="w-full sm:max-w-lg max-h-[100vh] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle className="text-xl font-bold">Ficha do Livro</SheetTitle>
-          </SheetHeader>
+          <ErrorBoundary
+            fallbackTitle="Não foi possível exibir a ficha do livro"
+            fallbackMessage="Ocorreu um erro ao renderizar os dados do livro. Tente recarregar."
+          >
+            <SheetHeader>
+              <SheetTitle className="text-xl font-bold">Ficha do Livro</SheetTitle>
+              <SheetDescription className="sr-only">Informações do livro e histórico</SheetDescription>
+            </SheetHeader>
 
           {loading ? (
             <div className="space-y-4 mt-4">
@@ -250,24 +256,34 @@ export function LivroFicha({ livroId, open, onOpenChange }: LivroFichaProps) {
                   <p className="text-base text-gray-500 italic">Nenhum movimento registrado.</p>
                 ) : (
                   <div className="space-y-2">
-                    {movements.map((mov, mIdx) => (
-                      <div key={mov?.id ? `${mov.id}-${mIdx}` : `mov-${mIdx}`} className="bg-white border border-gray-200 rounded-lg p-3">
-                        <div className="flex items-center justify-between gap-2">
-                          <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 shrink-0">
-                            {getAcaoLabel(mov?.acao || 'emprestimo')}
-                          </Badge>
-                          <span className="text-sm text-gray-500">
-                            {formatDateTime(mov?.created)}
-                          </span>
+                    {movements.map((mov, mIdx) => {
+                      if (!mov || typeof mov !== 'object') return null
+                      const movKey = mov.id ? `${mov.id}-${mIdx}` : `mov-${mIdx}`
+                      const movAcao = getAcaoLabel(String(mov.acao || 'emprestimo'))
+                      const movData = formatDateTime(mov.created)
+                      const movLeitor = String(mov.leitorNome || '—')
+                      const movVolMat = String(mov.volunteerMatricula || '—')
+                      const movVolNom = String(mov.volunteerName || '—')
+
+                      return (
+                        <div key={movKey} className="bg-white border border-gray-200 rounded-lg p-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 shrink-0">
+                              {movAcao}
+                            </Badge>
+                            <span className="text-sm text-gray-500">
+                              {movData}
+                            </span>
+                          </div>
+                          <p className="text-base font-semibold text-gray-900 mt-1 break-words">
+                            Usuário: {movLeitor}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            Responsável: {movVolMat} — {movVolNom}
+                          </p>
                         </div>
-                        <p className="text-base font-semibold text-gray-900 mt-1">
-                          Usuário: {mov?.leitorNome || '—'}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          Responsável: {mov?.volunteerMatricula || '—'} — {mov?.volunteerName || '—'}
-                        </p>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </div>
@@ -278,23 +294,31 @@ export function LivroFicha({ livroId, open, onOpenChange }: LivroFichaProps) {
               <p className="text-sm text-gray-400 mt-1">Verifique sua conexão ou tente novamente.</p>
             </div>
           )}
+          </ErrorBoundary>
         </SheetContent>
       </Sheet>
-      <LivroForm
-        open={editOpen}
-        onOpenChange={setEditOpen}
-        onSaved={() => {
-          loadData()
-          toast.success('Dados atualizados com sucesso.')
-        }}
-        livro={livro}
-      />
-      <DeleteConfirmDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        onConfirm={handleDelete}
-        loading={deleting}
-      />
+      {editOpen && (
+        <LivroForm
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          onSaved={() => {
+            loadData()
+            toast.success('Dados atualizados com sucesso.')
+          }}
+          livro={livro}
+        />
+      )}
+      {deleteOpen && (
+        <DeleteConfirmDialog
+          open={deleteOpen}
+          onOpenChange={setDeleteOpen}
+          onConfirm={handleDelete}
+          loading={deleting}
+          title="Excluir livro"
+          description="Tem certeza que deseja excluir este livro?"
+          confirmLabel="Excluir livro"
+        />
+      )}
     </>
   )
 }

@@ -175,11 +175,18 @@ export default function Usuarios() {
       )}
 
       {/* New User Form Dialog */}
-      <LeitorForm open={formOpen} onOpenChange={setFormOpen} onSaved={handleCreated} />
+      {formOpen && <LeitorForm open={formOpen} onOpenChange={setFormOpen} onSaved={handleCreated} />}
 
       {/* User Ficha Sheet */}
       <ErrorBoundary fallbackTitle="Não foi possível exibir a ficha deste usuário">
-        <LeitorFicha leitorId={fichaId} open={fichaOpen} onOpenChange={setFichaOpen} />
+        <LeitorFicha
+          leitorId={fichaId}
+          open={fichaOpen}
+          onOpenChange={(open) => {
+            setFichaOpen(open)
+            if (!open) setFichaId(null)
+          }}
+        />
       </ErrorBoundary>
     </div>
   )

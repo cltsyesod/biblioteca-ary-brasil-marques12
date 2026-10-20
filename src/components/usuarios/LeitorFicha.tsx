@@ -20,6 +20,7 @@ import { useRealtime } from '@/hooks/use-realtime'
 import { useAuth } from '@/hooks/use-auth'
 import { cn } from '@/lib/utils'
 import { formatNumeroCadastro } from '@/lib/code-formatter'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import {
   formatDateTime,
   formatDate,
@@ -115,22 +116,27 @@ export function LeitorFicha({ leitorId, open, onOpenChange }: LeitorFichaProps) 
     open,
   )
 
-  const activeLoans = emprestimos.filter(
-    (e) => (e.status === 'ativo' || e.status === 'atrasado') && !e.data_devolucao_real,
+  const safeEmprestimos = Array.isArray(emprestimos) ? emprestimos : []
+  const activeLoans = safeEmprestimos.filter(
+    (e) => Boolean(e) && (e.status === 'ativo' || e.status === 'atrasado') && !e.data_devolucao_real,
   )
-  const comumCount = activeLoans.filter((e) => (e.tipo_emprestimo || 'comum') === 'comum').length
-  const estudoCount = activeLoans.filter((e) => e.tipo_emprestimo === 'estudo').length
+  const comumCount = activeLoans.filter((e) => (e?.tipo_emprestimo || 'comum') === 'comum').length
+  const estudoCount = activeLoans.filter((e) => e?.tipo_emprestimo === 'estudo').length
 
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent className="w-full sm:max-w-lg max-h-[100vh] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle className="text-xl font-bold">Ficha do Usuário</SheetTitle>
-            <SheetDescription className="sr-only">
-              Informações do usuário e histórico de empréstimos
-            </SheetDescription>
-          </SheetHeader>
+          <ErrorBoundary
+            fallbackTitle="Não foi possível exibir a ficha do usuário"
+            fallbackMessage="Ocorreu um erro ao renderizar os dados do usuário. Tente recarregar."
+          >
+            <SheetHeader>
+              <SheetTitle className="text-xl font-bold">Ficha do Usuário</SheetTitle>
+              <SheetDescription className="sr-only">
+                Informações do usuário e histórico de empréstimos
+              </SheetDescription>
+            </SheetHeader>
 
           {loading ? (
             <div className="space-y-4 mt-4">
@@ -249,14 +255,26 @@ export function LeitorFicha({ leitorId, open, onOpenChange }: LeitorFichaProps) 
                 ) : (
                   <div className="space-y-3">
                     {activeLoans.map((emp) => {
+                      if (!emp || typeof emp !== 'object') return null
                       const situacao = getSituacao(emp.data_prevista_devolucao)
-                      const tipo = TIPO_LABELS[emp.tipo_emprestimo || 'comum'] || 'Comum'
+                      const tipo = TIPO_LABELS[String(emp.tipo_emprestimo || 'comum')] || 'Comum'
+                      const livroTitulo = String(emp.expand?.livro?.titulo || 'Livro não encontrado')
+                      const livroNumero = formatNumeroCadastro(emp.expand?.livro?.numero_cadastro)
+                      const dataEmp = formatDate(emp.data_emprestimo)
+                      const dataDev = formatDate(emp.data_prevista_devolucao)
+                      const rawResp = emp.expand?.responsavel_voluntario || emp.expand?.responsavel
+                      const respObj = Array.isArray(rawResp) ? rawResp[0] : rawResp
+                      const respMat = respObj && typeof respObj === 'object' ? String((respObj as any).matricula || '—') : '—'
+                      const respNom = respObj && typeof respObj === 'object' ? String((respObj as any).nome || (respObj as any).name || '—') : '—'
+
                       return (
                         <div
-                          key={emp.id}
+                          key={String(emp.id || Math.random())}
                           onClick={() => {
-                            setDetalhesId(emp.id)
-                            setDetalhesOpen(true)
+                            if (emp.id) {
+                              setDetalhesId(emp.id)
+                              setDetalhesOpen(true)
+                            }
                           }}
                           className={cn(
                             'border rounded-lg p-4 cursor-pointer hover:shadow-md transition-all duration-200',
@@ -267,40 +285,29 @@ export function LeitorFicha({ leitorId, open, onOpenChange }: LeitorFichaProps) 
                                 : 'bg-white border-gray-200/80',
                           )}
                         >
-                          <p className="text-lg font-bold text-gray-900">
-                            {emp.expand?.livro?.titulo || 'Livro não encontrado'}
+                          <p className="text-lg font-bold text-gray-900 break-words">
+                            {livroTitulo}
                           </p>
                           <div className="mt-1 space-y-1 text-base text-gray-700">
                             <p>
-                              Livro nº{' '}
-                              <span className="font-semibold">
-                                {formatNumeroCadastro(emp.expand?.livro?.numero_cadastro)}
-                              </span>
+                              Livro nº <span className="font-semibold">{livroNumero}</span>
                             </p>
                             <p>
                               Tipo: <span className="font-semibold">{tipo}</span>
                             </p>
-                            <p>Empréstimo: {formatDate(emp.data_emprestimo)}</p>
-                            <p>Devolução: {formatDate(emp.data_prevista_devolucao)}</p>
+                            <p>Empréstimo: {dataEmp}</p>
+                            <p>Devolução: {dataDev}</p>
                             <p className="flex items-center gap-2">
                               Situação:{' '}
                               <Badge className={SITUACAO_BADGE[situacao] || SITUACAO_BADGE['sem-data']}>
                                 {SITUACAO_LABELS[situacao] || 'Data não informada'}
                               </Badge>
                             </p>
-                            {(() => {
-                              const resp =
-                                emp.expand?.responsavel_voluntario || emp.expand?.responsavel
-                              const respObj = Array.isArray(resp) ? resp[0] : resp
-                              if (!respObj || typeof respObj !== 'object') return null
-                              const mat = (respObj as any).matricula || '—'
-                              const nom = (respObj as any).nome || (respObj as any).name || '—'
-                              return (
-                                <p className="text-sm text-gray-600">
-                                  Responsável: {mat} — {nom}
-                                </p>
-                              )
-                            })()}
+                            {respObj && typeof respObj === 'object' && (
+                              <p className="text-sm text-gray-600">
+                                Responsável: {respMat} — {respNom}
+                              </p>
+                            )}
                           </div>
                         </div>
                       )
@@ -320,25 +327,36 @@ export function LeitorFicha({ leitorId, open, onOpenChange }: LeitorFichaProps) 
                   <p className="text-base text-gray-500 italic">Nenhum movimento registrado.</p>
                 ) : (
                   <div className="space-y-2">
-                    {movements.map((mov, mIdx) => (
-                      <div key={mov?.id ? `${mov.id}-${mIdx}` : `mov-${mIdx}`} className="bg-white border border-gray-200 rounded-lg p-3">
-                        <div className="flex items-center justify-between gap-2">
-                          <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 shrink-0">
-                            {getAcaoLabel(mov?.acao || 'emprestimo')}
-                          </Badge>
-                          <span className="text-sm text-gray-500">
-                            {formatDateTime(mov?.created)}
-                          </span>
+                    {movements.map((mov, mIdx) => {
+                      if (!mov || typeof mov !== 'object') return null
+                      const movKey = mov.id ? `${mov.id}-${mIdx}` : `mov-${mIdx}`
+                      const movAcao = getAcaoLabel(String(mov.acao || 'emprestimo'))
+                      const movData = formatDateTime(mov.created)
+                      const movTitulo = String(mov.bookTitle || 'Livro não identificado')
+                      const movLivroNum = formatNumeroCadastro(mov.bookNumeroCadastro)
+                      const movVolMat = String(mov.volunteerMatricula || '—')
+                      const movVolNom = String(mov.volunteerName || '—')
+
+                      return (
+                        <div key={movKey} className="bg-white border border-gray-200 rounded-lg p-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 shrink-0">
+                              {movAcao}
+                            </Badge>
+                            <span className="text-sm text-gray-500">
+                              {movData}
+                            </span>
+                          </div>
+                          <p className="text-base font-semibold text-gray-900 mt-1 break-words">
+                            {movTitulo}
+                          </p>
+                          <p className="text-sm text-gray-600">Nº {movLivroNum}</p>
+                          <p className="text-sm text-gray-600">
+                            Responsável: {movVolMat} — {movVolNom}
+                          </p>
                         </div>
-                        <p className="text-base font-semibold text-gray-900 mt-1">
-                          {mov?.bookTitle || 'Livro não identificado'}
-                        </p>
-                        <p className="text-sm text-gray-600">Nº {formatNumeroCadastro(mov?.bookNumeroCadastro)}</p>
-                        <p className="text-sm text-gray-600">
-                          Responsável: {mov?.volunteerMatricula || '—'} — {mov?.volunteerName || '—'}
-                        </p>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </div>
@@ -349,29 +367,36 @@ export function LeitorFicha({ leitorId, open, onOpenChange }: LeitorFichaProps) 
               <p className="text-sm text-gray-400 mt-1">Verifique sua conexão ou tente novamente.</p>
             </div>
           )}
+          </ErrorBoundary>
         </SheetContent>
       </Sheet>
-      <LeitorForm
-        open={editOpen}
-        onOpenChange={setEditOpen}
-        onSaved={() => {
-          loadData()
-          toast.success('Dados atualizados com sucesso.')
-        }}
-        leitor={leitor}
-      />
-      <DeleteConfirmDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        onConfirm={handleDelete}
-        loading={deleting}
-      />
-      <EmprestimoDetalhes
-        emprestimoId={detalhesId}
-        open={detalhesOpen}
-        onOpenChange={setDetalhesOpen}
-        onChanged={loadData}
-      />
+      {editOpen && (
+        <LeitorForm
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          onSaved={() => {
+            loadData()
+            toast.success('Dados atualizados com sucesso.')
+          }}
+          leitor={leitor}
+        />
+      )}
+      {deleteOpen && (
+        <DeleteConfirmDialog
+          open={deleteOpen}
+          onOpenChange={setDeleteOpen}
+          onConfirm={handleDelete}
+          loading={deleting}
+        />
+      )}
+      {detalhesOpen && (
+        <EmprestimoDetalhes
+          emprestimoId={detalhesId}
+          open={detalhesOpen}
+          onOpenChange={setDetalhesOpen}
+          onChanged={loadData}
+        />
+      )}
     </>
   )
 }
