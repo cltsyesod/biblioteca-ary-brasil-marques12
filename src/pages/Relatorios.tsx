@@ -14,6 +14,7 @@ import { getReportDefs, type ReportType, type ReportDef } from '@/components/rel
 import { exportToCsv } from '@/components/relatorios/csvExport'
 import { LeitorFicha } from '@/components/usuarios/LeitorFicha'
 import { LivroFicha } from '@/components/acervo/LivroFicha'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 export default function Relatorios() {
   const [reportType, setReportType] = useState<ReportType>('emprestimos-realizados')
@@ -135,12 +136,16 @@ export default function Relatorios() {
         highlightRow={currentDef.highlightRow}
       />
 
-      <LeitorFicha
-        leitorId={leitorFichaId}
-        open={leitorFichaOpen}
-        onOpenChange={setLeitorFichaOpen}
-      />
-      <LivroFicha livroId={livroFichaId} open={livroFichaOpen} onOpenChange={setLivroFichaOpen} />
+      <ErrorBoundary fallbackTitle="Não foi possível exibir a ficha do usuário">
+        <LeitorFicha
+          leitorId={leitorFichaId}
+          open={leitorFichaOpen}
+          onOpenChange={setLeitorFichaOpen}
+        />
+      </ErrorBoundary>
+      <ErrorBoundary fallbackTitle="Não foi possível exibir a ficha do livro">
+        <LivroFicha livroId={livroFichaId} open={livroFichaOpen} onOpenChange={setLivroFichaOpen} />
+      </ErrorBoundary>
     </div>
   )
 }

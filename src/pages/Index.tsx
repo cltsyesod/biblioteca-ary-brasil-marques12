@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { LeitorFicha } from '@/components/usuarios/LeitorFicha'
 import { LivroFicha } from '@/components/acervo/LivroFicha'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import {
   fetchDashboardData,
   searchDashboard,
@@ -278,17 +279,19 @@ export default function Index() {
                 }`}
               >
                 <button
-                  onClick={() => openLeitor(item.leitorId)}
+                  type="button"
+                  onClick={() => item.leitorId && openLeitor(item.leitorId)}
                   className="flex-1 text-left cursor-pointer"
                 >
-                  <p className="text-lg font-bold text-[#1F5C8B]">{item.leitorNome}</p>
-                  <p className="text-sm text-gray-600">Nº {item.leitorNumero}</p>
+                  <p className="text-lg font-bold text-[#1F5C8B]">{item.leitorNome || 'Usuário'}</p>
+                  <p className="text-sm text-gray-600">Nº {item.leitorNumero || '—'}</p>
                 </button>
                 <button
-                  onClick={() => openLivro(item.livroId)}
+                  type="button"
+                  onClick={() => item.livroId && openLivro(item.livroId)}
                   className="flex-1 text-left cursor-pointer"
                 >
-                  <p className="text-base font-semibold text-[#1F5C8B]">{item.livroTitulo}</p>
+                  <p className="text-base font-semibold text-[#1F5C8B]">{item.livroTitulo || 'Livro'}</p>
                   <p className="text-sm text-gray-500">
                     Devolução prevista: {formatDate(item.dataPrevistaDevolucao)}
                   </p>
@@ -315,12 +318,16 @@ export default function Index() {
         )}
       </div>
 
-      <LeitorFicha
-        leitorId={leitorFichaId}
-        open={leitorFichaOpen}
-        onOpenChange={setLeitorFichaOpen}
-      />
-      <LivroFicha livroId={livroFichaId} open={livroFichaOpen} onOpenChange={setLivroFichaOpen} />
+      <ErrorBoundary fallbackTitle="Não foi possível exibir a ficha do usuário">
+        <LeitorFicha
+          leitorId={leitorFichaId}
+          open={leitorFichaOpen}
+          onOpenChange={setLeitorFichaOpen}
+        />
+      </ErrorBoundary>
+      <ErrorBoundary fallbackTitle="Não foi possível exibir a ficha do livro">
+        <LivroFicha livroId={livroFichaId} open={livroFichaOpen} onOpenChange={setLivroFichaOpen} />
+      </ErrorBoundary>
     </div>
   )
 }

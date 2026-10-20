@@ -87,10 +87,11 @@ export function LeitorFicha({ leitorId, open, onOpenChange }: LeitorFichaProps) 
 
     try {
       const emps = await getEmprestimosByLeitor(leitorId)
-      setEmprestimos(emps || [])
+      const safeEmps = Array.isArray(emps) ? emps : []
+      setEmprestimos(safeEmps)
       try {
-        const movs = await getMovementsFromEmprestimos(emps || [])
-        setMovements(movs || [])
+        const movs = await getMovementsFromEmprestimos(safeEmps)
+        setMovements(Array.isArray(movs) ? movs : [])
       } catch {
         setMovements([])
       }
@@ -286,18 +287,20 @@ export function LeitorFicha({ leitorId, open, onOpenChange }: LeitorFichaProps) 
                               <Badge className={SITUACAO_BADGE[situacao] || SITUACAO_BADGE['sem-data']}>
                                 {SITUACAO_LABELS[situacao] || 'Data não informada'}
                               </Badge>
-                            </p>{' '}
-                            {emp.expand?.responsavel_voluntario && typeof emp.expand.responsavel_voluntario === 'object' ? (
-                              <p className="text-sm text-gray-600">
-                                Responsável: {emp.expand.responsavel_voluntario.matricula || '—'} —{' '}
-                                {emp.expand.responsavel_voluntario.nome || '—'}
-                              </p>
-                            ) : emp.expand?.responsavel && typeof emp.expand.responsavel === 'object' ? (
-                              <p className="text-sm text-gray-600">
-                                Responsável: {emp.expand.responsavel.matricula || '—'} —{' '}
-                                {emp.expand.responsavel.nome || (emp.expand.responsavel as any).name || '—'}
-                              </p>
-                            ) : null}
+                            </p>
+                            {(() => {
+                              const resp =
+                                emp.expand?.responsavel_voluntario || emp.expand?.responsavel
+                              const respObj = Array.isArray(resp) ? resp[0] : resp
+                              if (!respObj || typeof respObj !== 'object') return null
+                              const mat = (respObj as any).matricula || '—'
+                              const nom = (respObj as any).nome || (respObj as any).name || '—'
+                              return (
+                                <p className="text-sm text-gray-600">
+                                  Responsável: {mat} — {nom}
+                                </p>
+                              )
+                            })()}
                           </div>
                         </div>
                       )
@@ -317,22 +320,22 @@ export function LeitorFicha({ leitorId, open, onOpenChange }: LeitorFichaProps) 
                   <p className="text-base text-gray-500 italic">Nenhum movimento registrado.</p>
                 ) : (
                   <div className="space-y-2">
-                    {movements.map((mov) => (
-                      <div key={mov.id} className="bg-white border border-gray-200 rounded-lg p-3">
+                    {movements.map((mov, mIdx) => (
+                      <div key={mov?.id ? `${mov.id}-${mIdx}` : `mov-${mIdx}`} className="bg-white border border-gray-200 rounded-lg p-3">
                         <div className="flex items-center justify-between gap-2">
                           <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 shrink-0">
-                            {getAcaoLabel(mov.acao)}
+                            {getAcaoLabel(mov?.acao || 'emprestimo')}
                           </Badge>
                           <span className="text-sm text-gray-500">
-                            {formatDateTime(mov.created)}
+                            {formatDateTime(mov?.created)}
                           </span>
                         </div>
                         <p className="text-base font-semibold text-gray-900 mt-1">
-                          {mov.bookTitle}
+                          {mov?.bookTitle || 'Livro não identificado'}
                         </p>
-                        <p className="text-sm text-gray-600">Nº {formatNumeroCadastro(mov.bookNumeroCadastro)}</p>
+                        <p className="text-sm text-gray-600">Nº {formatNumeroCadastro(mov?.bookNumeroCadastro)}</p>
                         <p className="text-sm text-gray-600">
-                          Responsável: {mov.volunteerMatricula} — {mov.volunteerName}
+                          Responsável: {mov?.volunteerMatricula || '—'} — {mov?.volunteerName || '—'}
                         </p>
                       </div>
                     ))}

@@ -88,11 +88,13 @@ export function EmprestimoDetalhes({
   }
 
   const situacao = emprestimo ? getSituacao(emprestimo.data_prevista_devolucao) : 'sem-data'
-  const voluntarioResp =
+  const rawResp =
     emprestimo?.expand?.responsavel_voluntario || emprestimo?.expand?.responsavel
-  const responsavelDisplay = voluntarioResp
-    ? `${voluntarioResp.matricula || '—'} — ${voluntarioResp.nome || (voluntarioResp as any).name || '—'}`
-    : 'Não informado'
+  const voluntarioResp = Array.isArray(rawResp) ? rawResp[0] : rawResp
+  const responsavelDisplay =
+    voluntarioResp && typeof voluntarioResp === 'object'
+      ? `${(voluntarioResp as any).matricula || '—'} — ${(voluntarioResp as any).nome || (voluntarioResp as any).name || '—'}`
+      : 'Não informado'
   const dataEmprestimoDisplay = emprestimo?.data_emprestimo
     ? formatDateTime(emprestimo.data_emprestimo)
     : 'Não informado'

@@ -83,8 +83,13 @@ export default function Acervo() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
+    const norm = (s?: string) =>
+      String(s || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
     return livros.filter((l) => {
-      if (statusFilter && l.status !== statusFilter) return false
+      if (statusFilter && norm(l.status) !== norm(statusFilter)) return false
       if (!q) return true
       const numRaw = String(l.numero_cadastro || '').toLowerCase()
       const numClean = formatNumeroCadastro(l.numero_cadastro).toLowerCase()

@@ -19,6 +19,7 @@ import {
   Menu,
 } from 'lucide-react'
 import { DateTimeIndicator } from '@/components/DateTimeIndicator'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import logoImg from '@/assets/image-fd362.png'
 
 interface NavItem {
@@ -141,7 +142,9 @@ export default function Layout() {
           <DateTimeIndicator />
         </div>
         <div className="p-4 md:p-6">
-          <Outlet />
+          <ErrorBoundary fallbackTitle="Ocorreu um problema ao carregar esta página">
+            <Outlet />
+          </ErrorBoundary>
         </div>
       </main>
     </div>

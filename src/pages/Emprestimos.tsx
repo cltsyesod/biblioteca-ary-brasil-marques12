@@ -22,6 +22,7 @@ import {
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { formatNumeroCadastro } from '@/lib/code-formatter'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 type FilterType = 'todos' | 'em-dia' | 'vence-hoje' | 'atrasados' | 'comum' | 'estudo'
 
@@ -44,6 +45,11 @@ export default function Emprestimos() {
   const [filter, setFilter] = useState<FilterType>(
     (searchParams.get('filter') as FilterType) || 'todos',
   )
+
+  useEffect(() => {
+    const f = searchParams.get('filter') as FilterType | null
+    if (f) setFilter(f)
+  }, [searchParams])
   const [leitorFichaId, setLeitorFichaId] = useState<string | null>(null)
   const [leitorFichaOpen, setLeitorFichaOpen] = useState(false)
   const [livroFichaId, setLivroFichaId] = useState<string | null>(null)
@@ -333,18 +339,24 @@ export default function Emprestimos() {
         onCreated={() => loadData()}
         preselectedLeitor={formLeitor}
       />
-      <LeitorFicha
-        leitorId={leitorFichaId}
-        open={leitorFichaOpen}
-        onOpenChange={setLeitorFichaOpen}
-      />
-      <LivroFicha livroId={livroFichaId} open={livroFichaOpen} onOpenChange={setLivroFichaOpen} />
-      <EmprestimoDetalhes
-        emprestimoId={detalhesId}
-        open={detalhesOpen}
-        onOpenChange={setDetalhesOpen}
-        onChanged={loadData}
-      />
+      <ErrorBoundary fallbackTitle="Não foi possível exibir a ficha do usuário">
+        <LeitorFicha
+          leitorId={leitorFichaId}
+          open={leitorFichaOpen}
+          onOpenChange={setLeitorFichaOpen}
+        />
+      </ErrorBoundary>
+      <ErrorBoundary fallbackTitle="Não foi possível exibir a ficha do livro">
+        <LivroFicha livroId={livroFichaId} open={livroFichaOpen} onOpenChange={setLivroFichaOpen} />
+      </ErrorBoundary>
+      <ErrorBoundary fallbackTitle="Não foi possível exibir os detalhes do empréstimo">
+        <EmprestimoDetalhes
+          emprestimoId={detalhesId}
+          open={detalhesOpen}
+          onOpenChange={setDetalhesOpen}
+          onChanged={loadData}
+        />
+      </ErrorBoundary>
     </div>
   )
 }

@@ -80,10 +80,11 @@ export function LivroFicha({ livroId, open, onOpenChange }: LivroFichaProps) {
 
     try {
       const emps = await getEmprestimosByLivro(livroId)
-      setEmprestimos(emps || [])
+      const safeEmps = Array.isArray(emps) ? emps : []
+      setEmprestimos(safeEmps)
       try {
-        const movs = await getMovementsFromEmprestimos(emps || [])
-        setMovements(movs || [])
+        const movs = await getMovementsFromEmprestimos(safeEmps)
+        setMovements(Array.isArray(movs) ? movs : [])
       } catch {
         setMovements([])
       }
@@ -100,7 +101,9 @@ export function LivroFicha({ livroId, open, onOpenChange }: LivroFichaProps) {
     loadData()
   }, [loadData])
 
-  const activeLoan = emprestimos.find((e) => e.status === 'ativo')
+  const activeLoan = (emprestimos || []).find(
+    (e) => e.status === 'ativo' || e.status === 'atrasado',
+  )
 
   return (
     <>
@@ -217,17 +220,24 @@ export function LivroFicha({ livroId, open, onOpenChange }: LivroFichaProps) {
                       {activeLoan.expand?.leitor?.nome_completo || 'Leitor não encontrado'}
                     </p>
                     <p className="text-sm text-gray-600">
-                      Nº {activeLoan.expand?.leitor?.numero_cadastro || '—'}
+                      Nº {formatNumeroCadastro(activeLoan.expand?.leitor?.numero_cadastro)}
                     </p>
                     <p className="text-sm text-gray-600">
                       Devolução prevista: {formatDateTime(activeLoan.data_prevista_devolucao)}
                     </p>
-                    {activeLoan.expand?.responsavel && (
-                      <p className="text-sm text-gray-600">
-                        Responsável: {activeLoan.expand.responsavel.matricula || '—'} —{' '}
-                        {activeLoan.expand.responsavel.name}
-                      </p>
-                    )}
+                    {(() => {
+                      const resp =
+                        activeLoan.expand?.responsavel_voluntario || activeLoan.expand?.responsavel
+                      const respObj = Array.isArray(resp) ? resp[0] : resp
+                      if (!respObj || typeof respObj !== 'object') return null
+                      const mat = (respObj as any).matricula || '—'
+                      const nom = (respObj as any).nome || (respObj as any).name || '—'
+                      return (
+                        <p className="text-sm text-gray-600">
+                          Responsável: {mat} — {nom}
+                        </p>
+                      )
+                    })()}
                   </div>
                 </div>
               )}
@@ -240,21 +250,21 @@ export function LivroFicha({ livroId, open, onOpenChange }: LivroFichaProps) {
                   <p className="text-base text-gray-500 italic">Nenhum movimento registrado.</p>
                 ) : (
                   <div className="space-y-2">
-                    {movements.map((mov) => (
-                      <div key={mov.id} className="bg-white border border-gray-200 rounded-lg p-3">
+                    {movements.map((mov, mIdx) => (
+                      <div key={mov?.id ? `${mov.id}-${mIdx}` : `mov-${mIdx}`} className="bg-white border border-gray-200 rounded-lg p-3">
                         <div className="flex items-center justify-between gap-2">
                           <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 shrink-0">
-                            {getAcaoLabel(mov.acao)}
+                            {getAcaoLabel(mov?.acao || 'emprestimo')}
                           </Badge>
                           <span className="text-sm text-gray-500">
-                            {formatDateTime(mov.created)}
+                            {formatDateTime(mov?.created)}
                           </span>
                         </div>
                         <p className="text-base font-semibold text-gray-900 mt-1">
-                          Usuário: {mov.leitorNome}
+                          Usuário: {mov?.leitorNome || '—'}
                         </p>
                         <p className="text-sm text-gray-600">
-                          Responsável: {mov.volunteerMatricula} — {mov.volunteerName}
+                          Responsável: {mov?.volunteerMatricula || '—'} — {mov?.volunteerName || '—'}
                         </p>
                       </div>
                     ))}

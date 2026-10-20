@@ -3,6 +3,7 @@ import { CornerUpLeft, User, BookOpen, CheckCircle2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { LeitorFicha } from '@/components/usuarios/LeitorFicha'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { getDevolucoesHoje, type EmprestimoWithLeitor } from '@/services/emprestimos'
 import { useRealtime } from '@/hooks/use-realtime'
 import { toast } from 'sonner'
@@ -103,11 +104,13 @@ export default function DevolucoesHoje() {
         </div>
       )}
 
-      <LeitorFicha
-        leitorId={leitorFichaId}
-        open={leitorFichaOpen}
-        onOpenChange={setLeitorFichaOpen}
-      />
+      <ErrorBoundary fallbackTitle="Não foi possível exibir a ficha do usuário">
+        <LeitorFicha
+          leitorId={leitorFichaId}
+          open={leitorFichaOpen}
+          onOpenChange={setLeitorFichaOpen}
+        />
+      </ErrorBoundary>
     </div>
   )
 }

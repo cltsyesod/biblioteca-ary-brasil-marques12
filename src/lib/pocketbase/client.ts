@@ -40,26 +40,31 @@ function fromDb(collection: string, row: RecordValue): RecordValue {
     updated: row.updated_at ?? row.updated,
   }
   if (collection === 'emprestimos') {
-    value.leitor = row.leitor_id ?? (typeof row.leitor === 'object' ? row.leitor?.id : row.leitor)
-    value.livro = row.livro_id ?? (typeof row.livro === 'object' ? row.livro?.id : row.livro)
+    const leitorObj = Array.isArray(row.leitor) ? row.leitor[0] : row.leitor
+    const livroObj = Array.isArray(row.livro) ? row.livro[0] : row.livro
+    const respObj = Array.isArray(row.responsavel_voluntario)
+      ? row.responsavel_voluntario[0]
+      : row.responsavel_voluntario
+    value.leitor = row.leitor_id ?? (typeof leitorObj === 'object' ? leitorObj?.id : leitorObj)
+    value.livro = row.livro_id ?? (typeof livroObj === 'object' ? livroObj?.id : livroObj)
     value.responsavel_voluntario =
       row.responsavel_voluntario_id ??
-      (typeof row.responsavel_voluntario === 'object'
-        ? row.responsavel_voluntario?.id
-        : row.responsavel_voluntario)
+      (typeof respObj === 'object' ? respObj?.id : respObj)
     value.expand = {
-      ...(row.leitor && typeof row.leitor === 'object' ? { leitor: fromDb('leitores', row.leitor) } : {}),
-      ...(row.livro && typeof row.livro === 'object' ? { livro: fromDb('livros', row.livro) } : {}),
-      ...(row.responsavel_voluntario && typeof row.responsavel_voluntario === 'object'
-        ? { responsavel_voluntario: fromDb('voluntarios', row.responsavel_voluntario) }
+      ...(leitorObj && typeof leitorObj === 'object' ? { leitor: fromDb('leitores', leitorObj) } : {}),
+      ...(livroObj && typeof livroObj === 'object' ? { livro: fromDb('livros', livroObj) } : {}),
+      ...(respObj && typeof respObj === 'object'
+        ? { responsavel_voluntario: fromDb('voluntarios', respObj) }
         : {}),
     }
   }
   if (collection === 'cursos_livros') {
-    value.curso = row.curso_id ?? (typeof row.curso === 'object' ? row.curso?.id : row.curso)
-    value.livro = row.livro_id ?? (typeof row.livro === 'object' ? row.livro?.id : row.livro)
+    const livroObj = Array.isArray(row.livro) ? row.livro[0] : row.livro
+    const cursoObj = Array.isArray(row.curso) ? row.curso[0] : row.curso
+    value.curso = row.curso_id ?? (typeof cursoObj === 'object' ? cursoObj?.id : cursoObj)
+    value.livro = row.livro_id ?? (typeof livroObj === 'object' ? livroObj?.id : livroObj)
     value.expand =
-      row.livro && typeof row.livro === 'object' ? { livro: fromDb('livros', row.livro) } : {}
+      livroObj && typeof livroObj === 'object' ? { livro: fromDb('livros', livroObj) } : {}
   }
   if (collection === 'voluntarios' && row.matricula != null) value.matricula = String(row.matricula)
   return value
@@ -87,7 +92,8 @@ function matchesFilter(record: RecordValue, filter?: string) {
   if (!filter) return true
   return filter.split(' || ').some((orPart) =>
     orPart.split(' && ').every((term) => {
-      const match = term.trim().match(/^([\w_]+)\s*(=|!=|>=|<=|~)\s*"([^"]*)"$/)
+      const cleaned = term.trim().replace(/^\(+/, '').replace(/\)+$/, '').trim()
+      const match = cleaned.match(/^([\w_]+)\s*(=|!=|>=|<=|~)\s*"([^"]*)"$/)
       if (!match) return false
       return compare(record[match[1]], match[2], match[3])
     }),
