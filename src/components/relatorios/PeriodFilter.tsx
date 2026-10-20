@@ -1,7 +1,8 @@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { getTodayInTimezone, parseSafeDate } from '@/lib/loan-utils'
 
-export type PeriodType = 'hoje' | 'semana' | 'mes' | 'custom'
+export type PeriodType = 'hoje' | 'semana' | 'mes' | 'todos' | 'custom'
 
 export interface PeriodFilterValue {
   type: PeriodType
@@ -10,7 +11,7 @@ export interface PeriodFilterValue {
 }
 
 function todayStr(): string {
-  return new Date().toISOString().split('T')[0]
+  return getTodayInTimezone()
 }
 
 function computePeriod(type: PeriodType, start?: string, end?: string): PeriodFilterValue {
@@ -19,17 +20,20 @@ function computePeriod(type: PeriodType, start?: string, end?: string): PeriodFi
     case 'hoje':
       return { type, start: today, end: today }
     case 'semana': {
-      const d = new Date()
+      const d = parseSafeDate(today) || new Date()
       const day = d.getDay()
       const sunday = new Date(d)
       sunday.setDate(d.getDate() - day)
-      return { type, start: sunday.toISOString().split('T')[0], end: today }
+      const sundayStr = `${sunday.getFullYear()}-${String(sunday.getMonth() + 1).padStart(2, '0')}-${String(sunday.getDate()).padStart(2, '0')}`
+      return { type, start: sundayStr, end: today }
     }
     case 'mes': {
-      const d = new Date()
-      const first = new Date(d.getFullYear(), d.getMonth(), 1)
-      return { type, start: first.toISOString().split('T')[0], end: today }
+      const parts = today.split('-')
+      const first = `${parts[0]}-${parts[1]}-01`
+      return { type, start: first, end: today }
     }
+    case 'todos':
+      return { type, start: '1970-01-01', end: today }
     case 'custom':
       return { type, start: start || today, end: end || today }
   }
@@ -49,6 +53,7 @@ export function PeriodFilterBar({ value, onChange }: PeriodFilterBarProps) {
     { type: 'hoje', label: 'Hoje' },
     { type: 'semana', label: 'Esta semana' },
     { type: 'mes', label: 'Este mês' },
+    { type: 'todos', label: 'Todo o histórico' },
     { type: 'custom', label: 'Escolher período' },
   ]
 

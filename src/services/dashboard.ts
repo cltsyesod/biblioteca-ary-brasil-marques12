@@ -38,12 +38,11 @@ export async function fetchDashboardData(): Promise<{
 
   const [activeRes, devolvidosRes, leitoresRes, livrosRes] = await Promise.allSettled([
     pb.collection('emprestimos').getFullList({
-      filter: 'status = "ativo" || status = "atrasado"',
       sort: 'data_prevista_devolucao',
       expand: 'leitor,livro',
     }),
-    pb.collection('emprestimos').getList(1, 1, {
-      filter: `status = "devolvido" && data_devolucao_real = "${today}"`,
+    pb.collection('emprestimos').getFullList({
+      sort: '-updated',
     }),
     pb.collection('leitores').getList(1, 1, {
       filter: 'status = "ativo"',
@@ -53,15 +52,24 @@ export async function fetchDashboardData(): Promise<{
     }),
   ])
 
-  const activeEmprestimos = activeRes.status === 'fulfilled' ? activeRes.value : []
-  const devolvidosToday = devolvidosRes.status === 'fulfilled' ? devolvidosRes.value.totalItems : 0
+  const allEmprestimos = activeRes.status === 'fulfilled' ? activeRes.value : []
+  const activeEmprestimos = allEmprestimos.filter(
+    (e: any) => !e.data_devolucao_real && String(e.status).toLowerCase() !== 'devolvido',
+  )
+  const allDevolvidos = devolvidosRes.status === 'fulfilled' ? devolvidosRes.value : []
+  const devolvidosToday = allDevolvidos.filter((e: any) => {
+    if (!e.data_devolucao_real) return false
+    const devDate = String(e.data_devolucao_real).split('T')[0]
+    return devDate === today
+  }).length
   const usuariosAtivos = leitoresRes.status === 'fulfilled' ? leitoresRes.value.totalItems : 0
   const livrosDisponiveis = livrosRes.status === 'fulfilled' ? livrosRes.value.totalItems : 0
 
   const overdue = activeEmprestimos.filter(
     (e: any) =>
-      isValidDate(e.data_prevista_devolucao) &&
-      getSituacao(e.data_prevista_devolucao) === 'atrasado',
+      String(e.status).toLowerCase() === 'atrasado' ||
+      (isValidDate(e.data_prevista_devolucao) &&
+        getSituacao(e.data_prevista_devolucao) === 'atrasado'),
   )
   const dueToday = activeEmprestimos.filter(
     (e: any) =>

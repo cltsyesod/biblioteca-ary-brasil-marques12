@@ -1,6 +1,7 @@
 import pb from '@/lib/pocketbase/client'
 import { getLivroByCadastro } from '@/services/livros'
 import { getVoluntario } from '@/services/voluntarios'
+import { getTodayInTimezone } from '@/lib/loan-utils'
 
 export interface Emprestimo {
   id: string
@@ -69,11 +70,13 @@ export const createEmprestimo = async (data: CreateEmprestimoData): Promise<Empr
 }
 
 export const getActiveEmprestimos = async (): Promise<EmprestimoWithLeitor[]> => {
-  return await pb.collection('emprestimos').getFullList<EmprestimoWithLeitor>({
-    filter: `status = "ativo" || status = "atrasado"`,
+  const records = await pb.collection('emprestimos').getFullList<EmprestimoWithLeitor>({
     sort: 'data_prevista_devolucao',
     expand: 'leitor,livro',
   })
+  return records.filter(
+    (e: any) => !e.data_devolucao_real && String(e.status).toLowerCase() !== 'devolvido',
+  )
 }
 
 export const getEmprestimo = async (id: string): Promise<EmprestimoWithLeitor> => {
@@ -145,11 +148,15 @@ export const getActiveEmprestimoByLivroCadastro = async (
 }
 
 export const getDevolucoesHoje = async (): Promise<EmprestimoWithLeitor[]> => {
-  const today = new Date().toISOString().split('T')[0]
-  return await pb.collection('emprestimos').getFullList<EmprestimoWithLeitor>({
-    filter: `status = "devolvido" && data_devolucao_real = "${today}"`,
+  const today = getTodayInTimezone()
+  const records = await pb.collection('emprestimos').getFullList<EmprestimoWithLeitor>({
     sort: '-updated',
     expand: 'leitor,livro',
+  })
+  return records.filter((e: any) => {
+    if (!e.data_devolucao_real) return false
+    const devDate = String(e.data_devolucao_real).split('T')[0]
+    return devDate === today
   })
 }
 

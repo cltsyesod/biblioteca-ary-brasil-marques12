@@ -82,8 +82,8 @@ function toDb(data: RecordValue) {
 function compare(value: unknown, op: string, expected: string) {
   const actual = value == null ? '' : String(value)
   if (op === '~') return actual.toLocaleLowerCase().includes(expected.toLocaleLowerCase())
-  if (op === '=') return actual === expected
-  if (op === '!=') return actual !== expected
+  if (op === '=') return actual.trim().toLowerCase() === expected.trim().toLowerCase()
+  if (op === '!=') return actual.trim().toLowerCase() !== expected.trim().toLowerCase()
   if (op === '>=') return actual >= expected
   return actual <= expected
 }

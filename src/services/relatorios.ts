@@ -79,8 +79,9 @@ function mapEmprestimo(r: any): EmprestimoRow {
 }
 
 export async function fetchEmprestimosRealizados(period: PeriodFilter): Promise<EmprestimoRow[]> {
+  const isAll = !period.start || period.start === '1970-01-01'
   const records = await pb.collection('emprestimos').getFullList({
-    filter: `data_emprestimo >= "${period.start}" && data_emprestimo <= "${period.end}"`,
+    filter: isAll ? undefined : `data_emprestimo >= "${period.start}" && data_emprestimo <= "${period.end}"`,
     sort: '-data_emprestimo',
     expand: 'leitor,livro',
   })
@@ -88,8 +89,11 @@ export async function fetchEmprestimosRealizados(period: PeriodFilter): Promise<
 }
 
 export async function fetchDevolucoesRealizadas(period: PeriodFilter): Promise<EmprestimoRow[]> {
+  const isAll = !period.start || period.start === '1970-01-01'
   const records = await pb.collection('emprestimos').getFullList({
-    filter: `data_devolucao_real != "" && data_devolucao_real >= "${period.start}" && data_devolucao_real <= "${period.end}"`,
+    filter: isAll
+      ? `data_devolucao_real != ""`
+      : `data_devolucao_real != "" && data_devolucao_real >= "${period.start}" && data_devolucao_real <= "${period.end}"`,
     sort: '-data_devolucao_real',
     expand: 'leitor,livro',
   })
@@ -97,8 +101,11 @@ export async function fetchDevolucoesRealizadas(period: PeriodFilter): Promise<E
 }
 
 export async function fetchRenovacoesRealizadas(period: PeriodFilter): Promise<RenovacaoRow[]> {
+  const isAll = !period.start || period.start === '1970-01-01'
   const auditRecords = await pb.collection('auditoria').getFullList({
-    filter: `acao = "renovacao" && created >= "${period.start}T00:00:00" && created <= "${period.end}T23:59:59"`,
+    filter: isAll
+      ? `acao = "renovacao"`
+      : `acao = "renovacao" && created >= "${period.start}T00:00:00" && created <= "${period.end}T23:59:59"`,
     sort: '-created',
     expand: 'usuario',
   })
@@ -129,24 +136,26 @@ export async function fetchRenovacoesRealizadas(period: PeriodFilter): Promise<R
 
 export async function fetchEmprestimosAtivos(_period?: PeriodFilter): Promise<EmprestimoRow[]> {
   const records = await pb.collection('emprestimos').getFullList({
-    filter: `status = "ativo" || status = "atrasado"`,
     sort: '-data_emprestimo',
     expand: 'leitor,livro',
   })
-  return records.map(mapEmprestimo)
+  return records
+    .filter((e: any) => !e.data_devolucao_real && String(e.status).toLowerCase() !== 'devolvido')
+    .map(mapEmprestimo)
 }
 
 export async function fetchEmprestimosAtrasados(_period?: PeriodFilter): Promise<EmprestimoRow[]> {
   const records = await pb.collection('emprestimos').getFullList({
-    filter: 'status = "ativo" || status = "atrasado"',
     sort: 'data_prevista_devolucao',
     expand: 'leitor,livro',
   })
   return records
     .filter(
       (e: any) =>
-        isValidDate(e.data_prevista_devolucao) &&
-        getSituacao(e.data_prevista_devolucao) === 'atrasado',
+        !e.data_devolucao_real &&
+        String(e.status).toLowerCase() !== 'devolvido' &&
+        (String(e.status).toLowerCase() === 'atrasado' ||
+          getSituacao(e.data_prevista_devolucao) === 'atrasado'),
     )
     .map(mapEmprestimo)
 }
